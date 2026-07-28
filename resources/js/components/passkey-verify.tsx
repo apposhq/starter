@@ -3,10 +3,10 @@ import { router } from "@inertiajs/react";
 import { usePasskeyVerify } from "@laravel/passkeys/react";
 import { KeyRound } from "lucide-react";
 
-import InputError from "@/components/input-error";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Spinner } from "@/components/ui/spinner";
+import InputError from "#/components/input-error.tsx";
+import { Button } from "#/components/ui/button.tsx";
+import { Separator } from "#/components/ui/separator.tsx";
+import { Spinner } from "#/components/ui/spinner.tsx";
 
 type Props = {
   routes?: {

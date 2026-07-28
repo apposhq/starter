@@ -1,8 +1,8 @@
 import { usePage } from "@inertiajs/react";
 import type { ReactNode } from "react";
 
-import { SidebarProvider } from "@/components/ui/sidebar";
-import type { AppVariant } from "@/types";
+import { SidebarProvider } from "#/components/ui/sidebar.tsx";
+import type { AppVariant } from "#/types/index.ts";
 
 type Props = {
   children: ReactNode;

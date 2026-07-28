@@ -1,5 +1,5 @@
-import AppLayoutTemplate from "@/layouts/app/app-sidebar-layout";
-import type { BreadcrumbItem } from "@/types";
+import AppLayoutTemplate from "#/layouts/app/app-sidebar-layout.tsx";
+import type { BreadcrumbItem } from "#/types/index.ts";
 
 export default function AppLayout({
   breadcrumbs = [],

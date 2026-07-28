@@ -1,7 +1,7 @@
-import { AppContent } from "@/components/app-content";
-import { AppHeader } from "@/components/app-header";
-import { AppShell } from "@/components/app-shell";
-import type { AppLayoutProps } from "@/types";
+import { AppContent } from "#/components/app-content.tsx";
+import { AppHeader } from "#/components/app-header.tsx";
+import { AppShell } from "#/components/app-shell.tsx";
+import type { AppLayoutProps } from "#/types/index.ts";
 
 export default function AppHeaderLayout({ children, breadcrumbs }: AppLayoutProps) {
   return (

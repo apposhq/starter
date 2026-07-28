@@ -3,22 +3,22 @@ import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { Check, Copy, ScanLine } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import AlertError from "@/components/alert-error";
-import InputError from "@/components/input-error";
-import { Button } from "@/components/ui/button";
+import AlertError from "#/components/alert-error.tsx";
+import InputError from "#/components/input-error.tsx";
+import { Button } from "#/components/ui/button.tsx";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Spinner } from "@/components/ui/spinner";
-import { useAppearance } from "@/hooks/use-appearance";
-import { useClipboard } from "@/hooks/use-clipboard";
-import { OTP_MAX_LENGTH } from "@/hooks/use-two-factor-auth";
-import { confirm } from "@/routes/two-factor";
+} from "#/components/ui/dialog.tsx";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "#/components/ui/input-otp.tsx";
+import { Spinner } from "#/components/ui/spinner.tsx";
+import { useAppearance } from "#/hooks/use-appearance.tsx";
+import { useClipboard } from "#/hooks/use-clipboard.ts";
+import { OTP_MAX_LENGTH } from "#/hooks/use-two-factor-auth.ts";
+import { confirm } from "#/routes/two-factor/index.ts";
 
 function GridScanIcon() {
   return (

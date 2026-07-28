@@ -6,9 +6,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { useCurrentUrl } from "@/hooks/use-current-url";
-import type { NavItem } from "@/types";
+} from "#/components/ui/sidebar.tsx";
+import { useCurrentUrl } from "#/hooks/use-current-url.ts";
+import type { NavItem } from "#/types/index.ts";
 
 export function NavMain({ items }: { items: NavItem[] }) {
   const { isCurrentUrl } = useCurrentUrl();
@@ -20,14 +20,12 @@ export function NavMain({ items }: { items: NavItem[] }) {
         {items.map((item) => (
           <SidebarMenuItem key={item.title}>
             <SidebarMenuButton
-              asChild
+              render={<Link href={item.href} prefetch />}
               isActive={isCurrentUrl(item.href)}
               tooltip={{ children: item.title }}
             >
-              <Link href={item.href} prefetch>
-                {item.icon && <item.icon />}
-                <span>{item.title}</span>
-              </Link>
+              {item.icon && <item.icon />}
+              <span>{item.title}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         ))}

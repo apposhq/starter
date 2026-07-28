@@ -2,8 +2,8 @@ import { Eye, EyeOff } from "lucide-react";
 import type { ComponentProps, Ref } from "react";
 import { useState } from "react";
 
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { Input } from "#/components/ui/input.tsx";
+import { cn } from "#/lib/utils.ts";
 
 export default function PasswordInput({
   className,

@@ -1,7 +1,7 @@
 import { InfoIcon } from "lucide-react";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import type { TeamInvitationContext } from "@/types";
+import { Alert, AlertDescription } from "#/components/ui/alert.tsx";
+import type { TeamInvitationContext } from "#/types/index.ts";
 
 type Props = {
   invitation: TeamInvitationContext;

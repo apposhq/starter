@@ -1,11 +1,11 @@
 import { Form } from "@inertiajs/react";
 import { useRef } from "react";
 
-import ProfileController from "@/actions/App/Http/Controllers/Settings/ProfileController";
-import Heading from "@/components/heading";
-import InputError from "@/components/input-error";
-import PasswordInput from "@/components/password-input";
-import { Button } from "@/components/ui/button";
+import ProfileController from "#/actions/App/Http/Controllers/Settings/ProfileController.ts";
+import Heading from "#/components/heading.tsx";
+import InputError from "#/components/input-error.tsx";
+import PasswordInput from "#/components/password-input.tsx";
+import { Button } from "#/components/ui/button.tsx";
 import {
   Dialog,
   DialogClose,
@@ -14,8 +14,8 @@ import {
   DialogFooter,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+} from "#/components/ui/dialog.tsx";
+import { Label } from "#/components/ui/label.tsx";
 
 export default function DeleteUser() {
   const passwordInput = useRef<HTMLInputElement>(null);
@@ -34,10 +34,8 @@ export default function DeleteUser() {
         </div>
 
         <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="destructive" data-test="delete-user-button">
-              Delete account
-            </Button>
+          <DialogTrigger render={<Button variant="destructive" data-test="delete-user-button" />}>
+            Delete account
           </DialogTrigger>
           <DialogContent>
             <DialogTitle>Are you sure you want to delete your account?</DialogTitle>
@@ -75,16 +73,19 @@ export default function DeleteUser() {
                   </div>
 
                   <DialogFooter className="gap-2">
-                    <DialogClose asChild>
-                      <Button variant="secondary" onClick={() => resetAndClearErrors()}>
-                        Cancel
-                      </Button>
+                    <DialogClose
+                      render={<Button variant="secondary" onClick={() => resetAndClearErrors()} />}
+                    >
+                      Cancel
                     </DialogClose>
 
-                    <Button variant="destructive" disabled={processing} asChild>
-                      <button type="submit" data-test="confirm-delete-user-button">
-                        Delete account
-                      </button>
+                    <Button
+                      variant="destructive"
+                      type="submit"
+                      data-test="confirm-delete-user-button"
+                      disabled={processing}
+                    >
+                      Delete account
                     </Button>
                   </DialogFooter>
                 </>

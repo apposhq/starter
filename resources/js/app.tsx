@@ -1,11 +1,11 @@
 import { createInertiaApp } from "@inertiajs/react";
 
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { initializeTheme } from "@/hooks/use-appearance";
-import AppLayout from "@/layouts/app-layout";
-import AuthLayout from "@/layouts/auth-layout";
-import SettingsLayout from "@/layouts/settings/layout";
+import { Toaster } from "#/components/ui/sonner.tsx";
+import { TooltipProvider } from "#/components/ui/tooltip.tsx";
+import { initializeTheme } from "#/hooks/use-appearance.tsx";
+import AppLayout from "#/layouts/app-layout.tsx";
+import AuthLayout from "#/layouts/auth-layout.tsx";
+import SettingsLayout from "#/layouts/settings/layout.tsx";
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
@@ -29,7 +29,7 @@ void createInertiaApp({
   strictMode: true,
   withApp(app) {
     return (
-      <TooltipProvider delayDuration={0}>
+      <TooltipProvider delay={0}>
         {app}
         <Toaster />
       </TooltipProvider>

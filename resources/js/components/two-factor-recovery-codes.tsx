@@ -2,10 +2,16 @@ import { Form } from "@inertiajs/react";
 import { Eye, EyeOff, LockKeyhole, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import AlertError from "@/components/alert-error";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { regenerateRecoveryCodes } from "@/routes/two-factor";
+import AlertError from "#/components/alert-error.tsx";
+import { Button } from "#/components/ui/button.tsx";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "#/components/ui/card.tsx";
+import { regenerateRecoveryCodes } from "#/routes/two-factor/index.ts";
 
 type Props = {
   recoveryCodesList: string[];

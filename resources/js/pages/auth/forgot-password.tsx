@@ -2,13 +2,13 @@
 import { Form, Head } from "@inertiajs/react";
 import { LoaderCircle } from "lucide-react";
 
-import InputError from "@/components/input-error";
-import TextLink from "@/components/text-link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { login } from "@/routes";
-import { email } from "@/routes/password";
+import InputError from "#/components/input-error.tsx";
+import TextLink from "#/components/text-link.tsx";
+import { Button } from "#/components/ui/button.tsx";
+import { Input } from "#/components/ui/input.tsx";
+import { Label } from "#/components/ui/label.tsx";
+import { login } from "#/routes/index.ts";
+import { email } from "#/routes/password/index.ts";
 
 export default function ForgotPassword({ status }: { status?: string }) {
   return (

@@ -1,6 +1,6 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useInitials } from "@/hooks/use-initials";
-import type { Team, User } from "@/types";
+import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar.tsx";
+import { useInitials } from "#/hooks/use-initials.tsx";
+import type { Team, User } from "#/types/index.ts";
 
 export function UserInfo({
   user,

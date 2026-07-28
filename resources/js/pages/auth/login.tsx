@@ -1,19 +1,19 @@
 import { Form, Head } from "@inertiajs/react";
 
-import InputError from "@/components/input-error";
-import PasskeyVerify from "@/components/passkey-verify";
-import PasswordInput from "@/components/password-input";
-import TeamInvitationAlert from "@/components/team-invitation-alert";
-import TextLink from "@/components/text-link";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/spinner";
-import { register } from "@/routes";
-import { store } from "@/routes/login";
-import { request } from "@/routes/password";
-import type { TeamInvitationContext } from "@/types";
+import InputError from "#/components/input-error.tsx";
+import PasskeyVerify from "#/components/passkey-verify.tsx";
+import PasswordInput from "#/components/password-input.tsx";
+import TeamInvitationAlert from "#/components/team-invitation-alert.tsx";
+import TextLink from "#/components/text-link.tsx";
+import { Button } from "#/components/ui/button.tsx";
+import { Checkbox } from "#/components/ui/checkbox.tsx";
+import { Input } from "#/components/ui/input.tsx";
+import { Label } from "#/components/ui/label.tsx";
+import { Spinner } from "#/components/ui/spinner.tsx";
+import { register } from "#/routes/index.ts";
+import { store } from "#/routes/login/index.ts";
+import { request } from "#/routes/password/index.ts";
+import type { TeamInvitationContext } from "#/types/index.ts";
 
 type Props = {
   status?: string;

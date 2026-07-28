@@ -1,8 +1,8 @@
-import { AppContent } from "@/components/app-content";
-import { AppShell } from "@/components/app-shell";
-import { AppSidebar } from "@/components/app-sidebar";
-import { AppSidebarHeader } from "@/components/app-sidebar-header";
-import type { AppLayoutProps } from "@/types";
+import { AppContent } from "#/components/app-content.tsx";
+import { AppShell } from "#/components/app-shell.tsx";
+import { AppSidebarHeader } from "#/components/app-sidebar-header.tsx";
+import { AppSidebar } from "#/components/app-sidebar.tsx";
+import type { AppLayoutProps } from "#/types/index.ts";
 
 export default function AppSidebarLayout({ children, breadcrumbs = [] }: AppLayoutProps) {
   return (

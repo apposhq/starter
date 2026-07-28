@@ -1,6 +1,6 @@
 import { AlertCircleIcon } from "lucide-react";
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "#/components/ui/alert.tsx";
 
 export default function AlertError({ errors, title }: { errors: string[]; title?: string }) {
   return (

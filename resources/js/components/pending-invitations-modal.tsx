@@ -1,16 +1,16 @@
 import { router } from "@inertiajs/react";
 import { useState } from "react";
 
-import TeamInvitationController from "@/actions/App/Http/Controllers/Teams/TeamInvitationController";
-import { Button } from "@/components/ui/button";
+import TeamInvitationController from "#/actions/App/Http/Controllers/Teams/TeamInvitationController.ts";
+import { Button } from "#/components/ui/button.tsx";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import type { DashboardInvitation } from "@/types";
+} from "#/components/ui/dialog.tsx";
+import type { DashboardInvitation } from "#/types/index.ts";
 
 type Props = {
   invitations: DashboardInvitation[];

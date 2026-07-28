@@ -1,7 +1,7 @@
 import { router } from "@inertiajs/react";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "#/components/ui/button.tsx";
 import {
   Dialog,
   DialogClose,
@@ -10,9 +10,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { destroy as destroyInvitation } from "@/routes/teams/invitations";
-import type { Team, TeamInvitation } from "@/types";
+} from "#/components/ui/dialog.tsx";
+import { destroy as destroyInvitation } from "#/routes/teams/invitations/index.ts";
+import type { Team, TeamInvitation } from "#/types/index.ts";
 
 type Props = {
   team: Team;
@@ -47,9 +47,7 @@ export default function CancelInvitationModal({ team, invitation, open, onOpenCh
         </DialogHeader>
 
         <DialogFooter className="gap-2">
-          <DialogClose asChild>
-            <Button variant="secondary">Keep invitation</Button>
-          </DialogClose>
+          <DialogClose render={<Button variant="secondary" />}>Keep invitation</DialogClose>
 
           <Button
             variant="destructive"

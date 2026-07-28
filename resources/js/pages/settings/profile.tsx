@@ -1,16 +1,16 @@
 import { Form, Head, usePage } from "@inertiajs/react";
 import { Link } from "@inertiajs/react";
 
-import ProfileController from "@/actions/App/Http/Controllers/Settings/ProfileController";
-import DeleteUser from "@/components/delete-user";
-import Heading from "@/components/heading";
-import InputError from "@/components/input-error";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { edit } from "@/routes/profile";
-import { send } from "@/routes/verification";
-import type { Auth } from "@/types";
+import ProfileController from "#/actions/App/Http/Controllers/Settings/ProfileController.ts";
+import DeleteUser from "#/components/delete-user.tsx";
+import Heading from "#/components/heading.tsx";
+import InputError from "#/components/input-error.tsx";
+import { Button } from "#/components/ui/button.tsx";
+import { Input } from "#/components/ui/input.tsx";
+import { Label } from "#/components/ui/label.tsx";
+import { edit } from "#/routes/profile/index.ts";
+import { send } from "#/routes/verification/index.ts";
+import type { Auth } from "#/types/index.ts";
 
 type PageProps = {
   auth: Auth;

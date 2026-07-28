@@ -1,16 +1,16 @@
 import { Link } from "@inertiajs/react";
 import type { PropsWithChildren } from "react";
 
-import Heading from "@/components/heading";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { useCurrentUrl } from "@/hooks/use-current-url";
-import { cn, toUrl } from "@/lib/utils";
-import { edit as editAppearance } from "@/routes/appearance";
-import { edit } from "@/routes/profile";
-import { edit as editSecurity } from "@/routes/security";
-import { index as teams } from "@/routes/teams";
-import type { NavItem } from "@/types";
+import Heading from "#/components/heading.tsx";
+import { Button } from "#/components/ui/button.tsx";
+import { Separator } from "#/components/ui/separator.tsx";
+import { useCurrentUrl } from "#/hooks/use-current-url.ts";
+import { cn, toUrl } from "#/lib/utils.ts";
+import { edit as editAppearance } from "#/routes/appearance/index.ts";
+import { edit } from "#/routes/profile/index.ts";
+import { edit as editSecurity } from "#/routes/security/index.ts";
+import { index as teams } from "#/routes/teams/index.ts";
+import type { NavItem } from "#/types/index.ts";
 
 const sidebarNavItems: NavItem[] = [
   {
@@ -50,15 +50,13 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 key={`${toUrl(item.href)}-${index}`}
                 size="sm"
                 variant="ghost"
-                asChild
+                render={<Link href={item.href} />}
                 className={cn("w-full justify-start", {
                   "bg-muted": isCurrentOrParentUrl(item.href),
                 })}
               >
-                <Link href={item.href}>
-                  {item.icon && <item.icon className="h-4 w-4" />}
-                  {item.title}
-                </Link>
+                {item.icon && <item.icon className="h-4 w-4" />}
+                {item.title}
               </Button>
             ))}
           </nav>

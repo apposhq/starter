@@ -1,7 +1,7 @@
 import { router } from "@inertiajs/react";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "#/components/ui/button.tsx";
 import {
   Dialog,
   DialogClose,
@@ -10,9 +10,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { leave as leaveTeamAction } from "@/routes/teams";
-import type { Team } from "@/types";
+} from "#/components/ui/dialog.tsx";
+import { leave as leaveTeamAction } from "#/routes/teams/index.ts";
+import type { Team } from "#/types/index.ts";
 
 type Props = {
   team: Team | null;
@@ -46,9 +46,7 @@ export default function LeaveTeamModal({ team, open, onOpenChange }: Props) {
         </DialogHeader>
 
         <DialogFooter className="gap-2">
-          <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
-          </DialogClose>
+          <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
 
           <Button
             variant="destructive"

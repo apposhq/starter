@@ -8,8 +8,8 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import type { BreadcrumbItem as BreadcrumbItemType } from "@/types";
+} from "#/components/ui/breadcrumb.tsx";
+import type { BreadcrumbItem as BreadcrumbItemType } from "#/types/index.ts";
 
 export function Breadcrumbs({ breadcrumbs }: { breadcrumbs: BreadcrumbItemType[] }) {
   return (
@@ -26,8 +26,8 @@ export function Breadcrumbs({ breadcrumbs }: { breadcrumbs: BreadcrumbItemType[]
                     {isLast ? (
                       <BreadcrumbPage>{item.title}</BreadcrumbPage>
                     ) : (
-                      <BreadcrumbLink asChild>
-                        <Link href={item.href}>{item.title}</Link>
+                      <BreadcrumbLink render={<Link href={item.href} />}>
+                        {item.title}
                       </BreadcrumbLink>
                     )}
                   </BreadcrumbItem>

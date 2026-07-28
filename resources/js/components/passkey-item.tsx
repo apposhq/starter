@@ -1,7 +1,7 @@
 import { KeyRound, Trash2 } from "lucide-react";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "#/components/ui/button.tsx";
 import {
   Dialog,
   DialogClose,
@@ -10,8 +10,8 @@ import {
   DialogFooter,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import type { Passkey } from "@/types/auth";
+} from "#/components/ui/dialog.tsx";
+import type { Passkey } from "#/types/auth.ts";
 
 type Props = {
   passkey: Passkey;
@@ -54,15 +54,17 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
       </div>
 
       <Dialog>
-        <DialogTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-          >
-            <Trash2 className="h-4 w-4" />
-            <span className="sr-only">Remove</span>
-          </Button>
+        <DialogTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            />
+          }
+        >
+          <Trash2 className="h-4 w-4" />
+          <span className="sr-only">Remove</span>
         </DialogTrigger>
         <DialogContent>
           <DialogTitle>Remove passkey</DialogTitle>
@@ -71,9 +73,7 @@ export default function PasskeyItem({ passkey, onDelete }: Props) {
             to use it to sign in.
           </DialogDescription>
           <DialogFooter className="gap-2">
-            <DialogClose asChild>
-              <Button variant="secondary">Cancel</Button>
-            </DialogClose>
+            <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
             <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
               {isDeleting ? "Removing..." : "Remove passkey"}
             </Button>

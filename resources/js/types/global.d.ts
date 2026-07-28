@@ -1,5 +1,4 @@
-import type { Auth } from "@/types/auth";
-import type { Team } from "@/types/teams";
+import type { Auth, Team } from "#/types/index.ts";
 
 declare module "react" {
   interface InputHTMLAttributes<T> {

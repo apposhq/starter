@@ -1,6 +1,6 @@
-import { Breadcrumbs } from "@/components/breadcrumbs";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import type { BreadcrumbItem as BreadcrumbItemType } from "@/types";
+import { Breadcrumbs } from "#/components/breadcrumbs.tsx";
+import { SidebarTrigger } from "#/components/ui/sidebar.tsx";
+import type { BreadcrumbItem as BreadcrumbItemType } from "#/types/index.ts";
 
 export function AppSidebarHeader({ breadcrumbs = [] }: { breadcrumbs?: BreadcrumbItemType[] }) {
   return (

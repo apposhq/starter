@@ -1,9 +1,15 @@
 import { Link } from "@inertiajs/react";
 import type { PropsWithChildren } from "react";
 
-import AppLogoIcon from "@/components/app-logo-icon";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { home } from "@/routes";
+import AppLogoIcon from "#/components/app-logo-icon.tsx";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "#/components/ui/card.tsx";
+import { home } from "#/routes/index.ts";
 
 export default function AuthCardLayout({
   children,

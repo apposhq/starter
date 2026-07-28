@@ -6,12 +6,12 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { UserInfo } from "@/components/user-info";
-import { useMobileNavigation } from "@/hooks/use-mobile-navigation";
-import { logout } from "@/routes";
-import { edit } from "@/routes/profile";
-import type { User } from "@/types";
+} from "#/components/ui/dropdown-menu.tsx";
+import { UserInfo } from "#/components/user-info.tsx";
+import { useMobileNavigation } from "#/hooks/use-mobile-navigation.ts";
+import { logout } from "#/routes/index.ts";
+import { edit } from "#/routes/profile/index.ts";
+import type { User } from "#/types/index.ts";
 
 type Props = {
   user: User;
@@ -34,25 +34,34 @@ export function UserMenuContent({ user }: Props) {
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
       <DropdownMenuGroup>
-        <DropdownMenuItem asChild>
-          <Link className="block w-full cursor-pointer" href={edit()} prefetch onClick={cleanup}>
-            <Settings className="mr-2" />
-            Settings
-          </Link>
+        <DropdownMenuItem
+          render={
+            <Link
+              className="block w-full cursor-pointer"
+              href={edit()}
+              prefetch
+              onClick={cleanup}
+            />
+          }
+        >
+          <Settings className="mr-2" />
+          Settings
         </DropdownMenuItem>
       </DropdownMenuGroup>
       <DropdownMenuSeparator />
-      <DropdownMenuItem asChild>
-        <Link
-          className="block w-full cursor-pointer"
-          href={logout()}
-          as="button"
-          onClick={handleLogout}
-          data-test="logout-button"
-        >
-          <LogOut className="mr-2" />
-          Log out
-        </Link>
+      <DropdownMenuItem
+        render={
+          <Link
+            className="block w-full cursor-pointer"
+            href={logout()}
+            as="button"
+            onClick={handleLogout}
+            data-test="logout-button"
+          />
+        }
+      >
+        <LogOut className="mr-2" />
+        Log out
       </DropdownMenuItem>
     </>
   );

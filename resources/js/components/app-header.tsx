@@ -1,31 +1,42 @@
 import { Link, usePage } from "@inertiajs/react";
 import { BookOpen, Folder, LayoutGrid, Menu, Search } from "lucide-react";
 
-import AppLogo from "@/components/app-logo";
-import AppLogoIcon from "@/components/app-logo-icon";
-import { Breadcrumbs } from "@/components/breadcrumbs";
-import { TeamSwitcher } from "@/components/team-switcher";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import AppLogoIcon from "#/components/app-logo-icon.tsx";
+import AppLogo from "#/components/app-logo.tsx";
+import { Breadcrumbs } from "#/components/breadcrumbs.tsx";
+import { TeamSwitcher } from "#/components/team-switcher.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar.tsx";
+import { Button } from "#/components/ui/button.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "#/components/ui/dropdown-menu.tsx";
 import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuList,
   navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { UserMenuContent } from "@/components/user-menu-content";
-import { useCurrentUrl } from "@/hooks/use-current-url";
-import { useInitials } from "@/hooks/use-initials";
-import { cn, toUrl } from "@/lib/utils";
-import { dashboard } from "@/routes";
-import type { BreadcrumbItem, NavItem } from "@/types";
+} from "#/components/ui/navigation-menu.tsx";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "#/components/ui/sheet.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "#/components/ui/tooltip.tsx";
+import { UserMenuContent } from "#/components/user-menu-content.tsx";
+import { useCurrentUrl } from "#/hooks/use-current-url.ts";
+import { useInitials } from "#/hooks/use-initials.tsx";
+import { cn, toUrl } from "#/lib/utils.ts";
+import { dashboard } from "#/routes/index.ts";
+import type { BreadcrumbItem, NavItem } from "#/types/index.ts";
 
 type Props = {
   breadcrumbs?: BreadcrumbItem[];
@@ -68,10 +79,10 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
           {/* Mobile Menu */}
           <div className="lg:hidden">
             <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="mr-2 h-[34px] w-[34px]">
-                  <Menu className="h-5 w-5" />
-                </Button>
+              <SheetTrigger
+                render={<Button variant="ghost" size="icon" className="mr-2 size-8.5" />}
+              >
+                <Menu className="h-5 w-5" />
               </SheetTrigger>
               <SheetContent
                 side="left"
@@ -153,7 +164,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
               </Button>
               <div className="ml-1 hidden gap-1 lg:flex">
                 {rightNavItems.map((item) => (
-                  <TooltipProvider key={item.title} delayDuration={0}>
+                  <TooltipProvider key={item.title} delay={0}>
                     <Tooltip>
                       <TooltipTrigger>
                         <a
@@ -177,15 +188,15 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
               </div>
             </div>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="size-10 rounded-full p-1">
-                  <Avatar className="size-8 overflow-hidden rounded-full">
-                    <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
-                    <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                      {getInitials(auth.user.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
+              <DropdownMenuTrigger
+                render={<Button variant="ghost" className="size-10 rounded-full p-1" />}
+              >
+                <Avatar className="size-8 overflow-hidden rounded-full">
+                  <AvatarImage src={auth.user.avatar} alt={auth.user.name} />
+                  <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+                    {getInitials(auth.user.name)}
+                  </AvatarFallback>
+                </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end">
                 <UserMenuContent user={auth.user} />

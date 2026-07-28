@@ -2,28 +2,39 @@ import { Form, Head, router } from "@inertiajs/react";
 import { ChevronDown, Mail, UserPlus, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
-import CancelInvitationModal from "@/components/cancel-invitation-modal";
-import DeleteTeamModal from "@/components/delete-team-modal";
-import Heading from "@/components/heading";
-import InputError from "@/components/input-error";
-import InviteMemberModal from "@/components/invite-member-modal";
-import RemoveMemberModal from "@/components/remove-member-modal";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import CancelInvitationModal from "#/components/cancel-invitation-modal.tsx";
+import DeleteTeamModal from "#/components/delete-team-modal.tsx";
+import Heading from "#/components/heading.tsx";
+import InputError from "#/components/input-error.tsx";
+import InviteMemberModal from "#/components/invite-member-modal.tsx";
+import RemoveMemberModal from "#/components/remove-member-modal.tsx";
+import { Avatar, AvatarFallback, AvatarImage } from "#/components/ui/avatar.tsx";
+import { Badge } from "#/components/ui/badge.tsx";
+import { Button } from "#/components/ui/button.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useInitials } from "@/hooks/use-initials";
-import { edit, index, update } from "@/routes/teams";
-import { update as updateMember } from "@/routes/teams/members";
-import type { RoleOption, Team, TeamInvitation, TeamMember, TeamPermissions } from "@/types";
+} from "#/components/ui/dropdown-menu.tsx";
+import { Input } from "#/components/ui/input.tsx";
+import { Label } from "#/components/ui/label.tsx";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "#/components/ui/tooltip.tsx";
+import { useInitials } from "#/hooks/use-initials.tsx";
+import { edit, index, update } from "#/routes/teams/index.ts";
+import { update as updateMember } from "#/routes/teams/members/index.ts";
+import type {
+  RoleOption,
+  Team,
+  TeamInvitation,
+  TeamMember,
+  TeamPermissions,
+} from "#/types/index.ts";
 
 type Props = {
   team: Team;
@@ -154,11 +165,13 @@ export default function TeamEdit({
                 <div className="flex items-center gap-2">
                   {member.role !== "owner" && permissions.canUpdateMember ? (
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" data-test="member-role-trigger">
-                          {member.role_label}
-                          <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
-                        </Button>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button variant="outline" size="sm" data-test="member-role-trigger" />
+                        }
+                      >
+                        {member.role_label}
+                        <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
                         {availableRoles.map((role) => (
@@ -179,15 +192,17 @@ export default function TeamEdit({
                   {member.role !== "owner" && permissions.canRemoveMember ? (
                     <TooltipProvider>
                       <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            data-test="member-remove-button"
-                            onClick={() => confirmRemoveMember(member)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              data-test="member-remove-button"
+                              onClick={() => confirmRemoveMember(member)}
+                            />
+                          }
+                        >
+                          <X className="h-4 w-4" />
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Remove member</p>
@@ -229,15 +244,17 @@ export default function TeamEdit({
                   {permissions.canCancelInvitation ? (
                     <TooltipProvider>
                       <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            data-test="invitation-cancel-button"
-                            onClick={() => confirmCancelInvitation(invitation)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                        <TooltipTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              data-test="invitation-cancel-button"
+                              onClick={() => confirmCancelInvitation(invitation)}
+                            />
+                          }
+                        >
+                          <X className="h-4 w-4" />
                         </TooltipTrigger>
                         <TooltipContent>
                           <p>Cancel invitation</p>

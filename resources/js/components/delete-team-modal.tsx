@@ -1,8 +1,8 @@
 import { Form } from "@inertiajs/react";
 import { useState } from "react";
 
-import InputError from "@/components/input-error";
-import { Button } from "@/components/ui/button";
+import InputError from "#/components/input-error.tsx";
+import { Button } from "#/components/ui/button.tsx";
 import {
   Dialog,
   DialogClose,
@@ -11,11 +11,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { destroy } from "@/routes/teams";
-import type { Team } from "@/types";
+} from "#/components/ui/dialog.tsx";
+import { Input } from "#/components/ui/input.tsx";
+import { Label } from "#/components/ui/label.tsx";
+import { destroy } from "#/routes/teams/index.ts";
+import type { Team } from "#/types/index.ts";
 
 type Props = {
   team: Team;
@@ -74,9 +74,7 @@ export default function DeleteTeamModal({ team, open, onOpenChange }: Props) {
               </div>
 
               <DialogFooter className="gap-2">
-                <DialogClose asChild>
-                  <Button variant="secondary">Cancel</Button>
-                </DialogClose>
+                <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
 
                 <Button
                   variant="destructive"

@@ -1,11 +1,11 @@
 import { Link, usePage } from "@inertiajs/react";
 import { BookOpen, FolderGit2, LayoutGrid } from "lucide-react";
 
-import AppLogo from "@/components/app-logo";
-import { NavFooter } from "@/components/nav-footer";
-import { NavMain } from "@/components/nav-main";
-import { NavUser } from "@/components/nav-user";
-import { TeamSwitcher } from "@/components/team-switcher";
+import AppLogo from "#/components/app-logo.tsx";
+import { NavFooter } from "#/components/nav-footer.tsx";
+import { NavMain } from "#/components/nav-main.tsx";
+import { NavUser } from "#/components/nav-user.tsx";
+import { TeamSwitcher } from "#/components/team-switcher.tsx";
 import {
   Sidebar,
   SidebarContent,
@@ -14,9 +14,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import { dashboard } from "@/routes";
-import type { NavItem } from "@/types";
+} from "#/components/ui/sidebar.tsx";
+import { dashboard } from "#/routes/index.ts";
+import type { NavItem } from "#/types/index.ts";
 
 export function AppSidebar() {
   const page = usePage();
@@ -48,10 +48,8 @@ export function AppSidebar() {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href={dashboardUrl} prefetch>
-                <AppLogo />
-              </Link>
+            <SidebarMenuButton size="lg" render={<Link href={dashboardUrl} prefetch />}>
+              <AppLogo />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -1,7 +1,7 @@
 import { router } from "@inertiajs/react";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button } from "#/components/ui/button.tsx";
 import {
   Dialog,
   DialogClose,
@@ -10,9 +10,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { destroy as destroyMember } from "@/routes/teams/members";
-import type { Team, TeamMember } from "@/types";
+} from "#/components/ui/dialog.tsx";
+import { destroy as destroyMember } from "#/routes/teams/members/index.ts";
+import type { Team, TeamMember } from "#/types/index.ts";
 
 type Props = {
   team: Team;
@@ -47,9 +47,7 @@ export default function RemoveMemberModal({ team, member, open, onOpenChange }: 
         </DialogHeader>
 
         <DialogFooter className="gap-2">
-          <DialogClose asChild>
-            <Button variant="secondary">Cancel</Button>
-          </DialogClose>
+          <DialogClose render={<Button variant="secondary" />}>Cancel</DialogClose>
 
           <Button
             variant="destructive"
