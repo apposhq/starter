@@ -1,0 +1,41 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    env:
+      # Only ever used on a developer machine, and cloudflared would open a tunnel from CI.
+      MISE_DISABLE_TOOLS: claude,cloudflared
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      # Installs the apt build chain from [bootstrap.packages], every tool in [tools], and then runs
+      # the `bootstrap` task: dependencies, compose services, and the production build. mise is the
+      # only source of tool versions, so there is nothing to keep in step with mise.toml here.
+      #
+      # PHP is compiled from source, so the cache is what keeps this affordable. mise-action caches
+      # the install directory by default; the key covers mise.toml, so it is rebuilt only when the
+      # pinned toolchain actually changes.
+      - name: Bootstrap
+        uses: jdx/mise-action@v4.2.3
+        with:
+          bootstrap: true
+          experimental: true
+          cache_key_prefix: mise-ci-v1
+
+      - name: Run CI Checks
+        run: mise check

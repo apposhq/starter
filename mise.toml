@@ -1,0 +1,124 @@
+[env]
+_.path = ["./node_modules/.bin", "./vendor/bin"]
+FORCE_COLOR = "1"
+NODE_OPTIONS = "--no-warnings"
+PHP_EXTRA_CONFIGURE_OPTIONS = "{% if os() == 'macos' %}--with-pdo-pgsql=/opt/homebrew/opt/libpq --with-pgsql=/opt/homebrew/opt/libpq{% else %}--with-pdo-pgsql --with-pgsql{% endif %}"
+
+[bootstrap.packages]
+"brew:autoconf" = "2.73"
+"brew:bison" = "3.8.2"
+"brew:libiconv" = "1.19"
+"brew:libpq" = "18.4"
+"brew:pkgconf" = "3.0.4"
+"brew:re2c" = "4.5.1"
+"apt:autoconf" = "latest"
+"apt:bison" = "latest"
+"apt:libpq-dev" = "latest"
+"apt:pkg-config" = "latest"
+"apt:re2c" = "latest"
+
+[settings]
+experimental = true
+lockfile = true
+quiet = true
+
+[tools]
+claude = "2.1.220"
+cloudflared = "2026.7.3"
+nub = "0.5.0"
+php = "8.5.0"
+
+[tasks.cc]
+description = "Run Claude Code with permission prompts skipped"
+run = "claude --chrome --dangerously-skip-permissions"
+
+[tasks.bootstrap]
+description = "Install dependencies, start infra, and build (run via `mise bootstrap`)"
+depends_post = ["up", "build"]
+run = """
+composer install
+nub install
+"""
+
+[tasks.build]
+description = "Build the frontend assets for production"
+run = "vp build"
+
+[tasks."build:ssr"]
+description = "Build the frontend assets for production, including the SSR bundle"
+depends = ["build"]
+run = "vp build --ssr"
+
+[tasks.check]
+description = "Format, lint, typecheck, and run the tests"
+depends = ["check:*"]
+
+[tasks."check:js"]
+description = "Format, lint, and typecheck the frontend"
+run = "vp check --fix"
+
+[tasks."check:php"]
+description = "Format and lint the PHP code"
+run = "pint --parallel"
+
+[tasks."check:test"]
+description = "Run the test suite"
+depends = ["check:php", "up"]
+run = "php artisan test --compact"
+
+[tasks."check:types"]
+description = "Typecheck the PHP code"
+depends = ["check:php"]
+run = "phpstan analyse --memory-limit=1G"
+
+[tasks.clean]
+description = "Clean the project"
+run = "rm -rf .playwright* node_modules vendor"
+
+[tasks.rum_token]
+description = "Fetch the current RUM token from OpenObserve and print it to stdout"
+run = 'curl -s -u "${ZO_ROOT_USER_EMAIL:-root@appos.sh}:${ZO_ROOT_USER_PASSWORD:-Openobserve1!}" http://localhost:5080/api/default/rumtoken | jq -r ".data.rum_token // empty"'
+
+[tasks.dev]
+description = "Start the development environment (server and worker)"
+depends = ["up"]
+depends_post = ["dev:server", "dev:tunnel", "dev:vite", "dev:worker"]
+run = "mkdir -p tmp && : > tmp/dev.log"
+
+[tasks."dev:server"]
+hide = true
+run = "php artisan serve --host=0.0.0.0 --port=${PORT:-8000} 2>&1 | tee -a tmp/dev.log"
+
+[tasks."dev:tunnel"]
+hide = true
+run = "cloudflared tunnel --no-autoupdate --url http://localhost:${PORT:-8000} 2>&1 | tee -a tmp/dev.log"
+
+[tasks."dev:vite"]
+hide = true
+run = "vp dev 2>&1 | tee -a tmp/dev.log"
+
+[tasks."dev:worker"]
+hide = true
+run = "php artisan queue:listen --tries=1 --timeout=0 2>&1 | tee -a tmp/dev.log"
+
+[tasks.down]
+description = "Stop and remove local infra containers, orphans, and volumes"
+run = "docker compose --profile=app --profile=infra down --remove-orphans --timeout=0 --volumes"
+
+[tasks.up]
+description = "Start local infra containers"
+run = """
+if [ "$(docker compose --profile=infra ps --services --status running | sort)" != "$(docker compose --profile=infra config --services | sort)" ]; then
+  docker compose --profile=infra up -d --wait
+  php artisan migrate --force
+  php artisan db:seed --force
+fi
+"""
+
+[tasks.preview]
+description = "Preview the production build in the Docker Compose cluster"
+depends = ["up"]
+run = """
+trap 'docker compose --profile=app down --remove-orphans --timeout=0 --volumes' EXIT
+OO_RUM_CLIENT_TOKEN=$(mise rum_token) docker compose --profile=app up --build --scale --scale worker=${WORKER_REPLICAS:-1}
+"""

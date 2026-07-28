@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "bradlc.vscode-tailwindcss",
+    "eamodio.gitlens",
+    "editorconfig.editorconfig",
+    "github.vscode-github-actions",
+    "laravel.vscode-laravel",
+    "typescriptteam.native-preview",
+    "voidzero.vite-plus-extension-pack"
+  ]
+}

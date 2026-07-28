@@ -1,0 +1,103 @@
+x-app_config: &app_config
+  build:
+    context: .
+    dockerfile: ./Dockerfile
+    args:
+      VITE_OO_RUM_CLIENT_TOKEN: ${OO_RUM_CLIENT_TOKEN:-}
+      VITE_OO_RUM_ORG: ${OO_RUM_ORG:-default}
+      VITE_OO_RUM_SITE: ${OO_RUM_SITE:-localhost:5080}
+  environment:
+    APP_KEY: ${APP_KEY:-base64:g7J5n6MtDAj0ppG9TbzJ6eLWXcQgtPK0HufPZLo8Td0=}
+    APP_DEBUG: ${APP_DEBUG:-false}
+    APP_ENV: ${APP_ENV:-production}
+    APP_URL: ${APP_URL:-http://localhost:8000}
+    DB_URL_PRIMARY: ${DB_URL_PRIMARY:-postgresql://postgres:postgres@postgres:5432/primary}
+    GIT_ROOT: ${GIT_ROOT:-/data/repos}
+    PORT: ${PORT:-8000}
+    OO_OTLP_ENDPOINT: ${OO_OTLP_ENDPOINT:-http://openobserve:5080/api/default}
+    OO_USER: ${ZO_ROOT_USER_EMAIL:-root@appos.sh}
+    OO_PASSWORD: ${ZO_ROOT_USER_PASSWORD:-Openobserve1!}
+  # The server and worker share the repos volume; git's lockfiles make concurrent access safe.
+  volumes:
+    - repos:/data/repos
+  profiles:
+    - app
+  restart: unless-stopped
+  # Let in-flight requests and jobs finish on SIGTERM before the SIGKILL. With >=2 replicas, this is
+  # what makes the rolling swap lossless.
+  stop_grace_period: 30s
+
+configs:
+  postgres_initdb:
+    content: |
+      \set databases `echo "$$POSTGRES_DATABASES"`
+      SELECT format('CREATE DATABASE %I', name)
+      FROM unnest(string_to_array(:'databases', ',')) AS base,
+           LATERAL (VALUES (base), (base || '_test')) AS n(name)
+      WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = n.name)
+      \gexec
+
+services:
+  postgres:
+    image: postgres:19beta1
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      # Every database the application connects to, comma separated. This is the only place they are
+      # declared: the init script below creates each one alongside a `<name>_test` companion, because
+      # the suite's RefreshDatabase drops every table and must not do that to development data.
+      # POSTGRES_DB is deliberately unset so this list stays the single source.
+      POSTGRES_DATABASES: ${POSTGRES_DATABASES:-primary}
+      # The pgdata volume below is only the data directory if PGDATA points at it. Without this the
+      # image keeps its own default (/var/lib/postgresql/19/docker, which carries the major version),
+      # the declared volume stays empty, and the cluster lands in the anonymous volume Docker creates
+      # for the image's VOLUME /var/lib/postgresql. That still persists, but under a name nothing
+      # references, so the declaration below reads as persistence that is not happening.
+      PGDATA: /home/postgres/pgdata
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d postgres"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+    ports:
+      - 5432:5432
+    profiles:
+      - infra
+    configs:
+      - source: postgres_initdb
+        target: /docker-entrypoint-initdb.d/create-databases.sql
+    volumes:
+      - pgdata:/home/postgres/pgdata
+    restart: unless-stopped
+
+  # Observability (logs, metrics, traces, RUM, session replay) for the primary and its apps; backs
+  # the per-app dashboards and the @appos/o11y primitive. Single binary, ~140x cheaper than ELK/Datadog.
+  openobserve:
+    image: openobserve/openobserve:v0.91.2
+    environment:
+      ZO_ROOT_USER_EMAIL: ${ZO_ROOT_USER_EMAIL:-root@appos.sh}
+      ZO_ROOT_USER_PASSWORD: ${ZO_ROOT_USER_PASSWORD:-Openobserve1!}
+      ZO_DATA_DIR: /data
+      # Browser RUM posts cross-origin, so its origin must be allow-listed. Defaults cover local dev
+      # and preview; add production domains.
+      ZO_CORS_ALLOWED_ORIGINS: ${ZO_CORS_ALLOWED_ORIGINS:-http://localhost:8000,https://localhost}
+    ports:
+      - 5080:5080
+    profiles:
+      - infra
+    volumes:
+      - o2data:/data
+    restart: unless-stopped
+
+  server:
+    <<: *app_config
+
+  worker:
+    <<: *app_config
+    command: []
+
+volumes:
+  pgdata:
+  o2data:
+  repos:
