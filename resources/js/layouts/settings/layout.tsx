@@ -50,6 +50,7 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
                 key={`${toUrl(item.href)}-${index}`}
                 size="sm"
                 variant="ghost"
+                nativeButton={false}
                 render={<Link href={item.href} />}
                 className={cn("w-full justify-start", {
                   "bg-muted": isCurrentOrParentUrl(item.href),

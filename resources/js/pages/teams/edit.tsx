@@ -178,7 +178,7 @@ export default function TeamEdit({
                           <DropdownMenuItem
                             key={role.value}
                             data-test="member-role-option"
-                            onSelect={() => updateMemberRole(member, role.value)}
+                            onClick={() => updateMemberRole(member, role.value)}
                           >
                             {role.label}
                           </DropdownMenuItem>

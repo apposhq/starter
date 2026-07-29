@@ -1,11 +1,13 @@
 import { router, usePage } from "@inertiajs/react";
 import { Check, ChevronsUpDown, Plus, Users } from "lucide-react";
+import { useState } from "react";
 
 import CreateTeamModal from "#/components/create-team-modal.tsx";
 import { Button } from "#/components/ui/button.tsx";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -22,6 +24,7 @@ type TeamSwitcherProps = {
 export function TeamSwitcher({ inHeader = false }: TeamSwitcherProps) {
   const page = usePage();
   const isMobile = useIsMobile();
+  const [createTeamOpen, setCreateTeamOpen] = useState(false);
   const currentTeam = page.props.currentTeam;
   const teams = page.props.teams ?? [];
 
@@ -95,32 +98,33 @@ export function TeamSwitcher({ inHeader = false }: TeamSwitcherProps) {
         align={inHeader ? "end" : "start"}
         sideOffset={inHeader ? undefined : 4}
       >
-        <DropdownMenuLabel className="text-muted-foreground text-xs">Teams</DropdownMenuLabel>
-        {teams.map((team) => (
-          <DropdownMenuItem
-            key={team.id}
-            data-test="team-switcher-item"
-            className={inHeader ? "cursor-pointer gap-2" : "cursor-pointer gap-2 p-2"}
-            onSelect={() => switchTeam(team)}
-          >
-            {team.name}
-            {currentTeam?.id === team.id && (
-              <Check className={inHeader ? "ml-auto size-4" : "ml-auto h-4 w-4"} />
-            )}
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="text-muted-foreground text-xs">Teams</DropdownMenuLabel>
+          {teams.map((team) => (
+            <DropdownMenuItem
+              key={team.id}
+              data-test="team-switcher-item"
+              className={inHeader ? "cursor-pointer gap-2" : "cursor-pointer gap-2 p-2"}
+              onClick={() => switchTeam(team)}
+            >
+              {team.name}
+              {currentTeam?.id === team.id && (
+                <Check className={inHeader ? "ml-auto size-4" : "ml-auto h-4 w-4"} />
+              )}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <CreateTeamModal>
-          <DropdownMenuItem
-            data-test="team-switcher-new-team"
-            className={inHeader ? "cursor-pointer gap-2" : "cursor-pointer gap-2 p-2"}
-            onSelect={(event) => event.preventDefault()}
-          >
-            <Plus className={inHeader ? "size-4" : "h-4 w-4"} />
-            <span className="text-muted-foreground">New team</span>
-          </DropdownMenuItem>
-        </CreateTeamModal>
+        <DropdownMenuItem
+          data-test="team-switcher-new-team"
+          className={inHeader ? "cursor-pointer gap-2" : "cursor-pointer gap-2 p-2"}
+          onClick={() => setCreateTeamOpen(true)}
+        >
+          <Plus className={inHeader ? "size-4" : "h-4 w-4"} />
+          <span className="text-muted-foreground">New team</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
+      <CreateTeamModal open={createTeamOpen} onOpenChange={setCreateTeamOpen} />
     </DropdownMenu>
   );
 }

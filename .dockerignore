@@ -1,3 +1,5 @@
+# Deny everything, then allow only what the build reads. New top-level files are excluded by
+# default, so a build that suddenly cannot find one needs a `!` line here.
 *
 !app
 !bootstrap
@@ -15,8 +17,8 @@
 !bun.lock
 !tsconfig.json
 !vite.config.ts
-!components.json
 
+# Generated inside the image. Copying a host build in would ship stale assets.
 bootstrap/cache/*.php
 bootstrap/ssr
 public/build

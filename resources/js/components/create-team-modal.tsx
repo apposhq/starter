@@ -18,12 +18,25 @@ import { Input } from "#/components/ui/input.tsx";
 import { Label } from "#/components/ui/label.tsx";
 import { store } from "#/routes/teams/index.ts";
 
-export default function CreateTeamModal({ children }: { children: ReactElement }) {
-  const [open, setOpen] = useState(false);
+// Callers that already own a trigger (a menu item, say) drive this with `open`/`onOpenChange` and
+// pass no children: a DialogTrigger cannot be composed onto a menu item without one of them losing
+// its semantics, and the trigger stops firing entirely.
+export default function CreateTeamModal({
+  children,
+  open: controlledOpen,
+  onOpenChange,
+}: {
+  children?: ReactElement;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = onOpenChange ?? setUncontrolledOpen;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={children} />
+      {children ? <DialogTrigger render={children} /> : null}
       <DialogContent>
         <Form
           key={String(open)}

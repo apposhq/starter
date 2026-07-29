@@ -1,3 +1,9 @@
+# This app runs on config/ defaults rather than a .env, but nothing stops someone creating one, and
+# an unignored .env is how APP_KEY and database credentials get committed.
+.env
+.env.*
+!.env.example
+
 /.phpunit.cache
 /bootstrap/ssr
 /node_modules
@@ -23,6 +29,8 @@ yarn-error.log
 /.fleet
 /.idea
 /.nova
+/.playwright
+/.playwright-cli
 /.zed
 
 **/caddy

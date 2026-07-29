@@ -100,6 +100,7 @@ export default function TeamsIndex({ teams }: Props) {
                               variant="ghost"
                               size="sm"
                               data-test="team-view-button"
+                              nativeButton={false}
                               render={<Link href={edit(team.slug)} />}
                             />
                           }
@@ -118,6 +119,7 @@ export default function TeamsIndex({ teams }: Props) {
                               variant="ghost"
                               size="sm"
                               data-test="team-edit-button"
+                              nativeButton={false}
                               render={<Link href={edit(team.slug)} />}
                             />
                           }
