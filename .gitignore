@@ -24,3 +24,7 @@ yarn-error.log
 /.idea
 /.nova
 /.zed
+
+**/caddy
+frankenphp
+frankenphp-worker.php

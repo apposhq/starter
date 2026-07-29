@@ -2,10 +2,6 @@ x-app_config: &app_config
   build:
     context: .
     dockerfile: ./Dockerfile
-    args:
-      VITE_OO_RUM_CLIENT_TOKEN: ${OO_RUM_CLIENT_TOKEN:-}
-      VITE_OO_RUM_ORG: ${OO_RUM_ORG:-default}
-      VITE_OO_RUM_SITE: ${OO_RUM_SITE:-localhost:5080}
   environment:
     APP_KEY: ${APP_KEY:-base64:g7J5n6MtDAj0ppG9TbzJ6eLWXcQgtPK0HufPZLo8Td0=}
     APP_DEBUG: ${APP_DEBUG:-false}
@@ -92,10 +88,18 @@ services:
 
   server:
     <<: *app_config
+    ports:
+      - ${PORT:-8000}:${PORT:-8000}
 
+  # Octane holds the booted app in memory, so the queue worker is a separate process rather than a
+  # thread of the server. --max-jobs/--max-time recycle it before a leak can accumulate.
   worker:
     <<: *app_config
-    command: []
+    # Both services share one image, so the image's HTTP healthcheck has to be dropped here: the
+    # worker serves no HTTP and would otherwise report unhealthy forever and stall `up --wait`.
+    healthcheck:
+      disable: true
+    command: ["php", "artisan", "queue:work", "--tries=3", "--max-jobs=1000", "--max-time=3600"]
 
 volumes:
   pgdata:

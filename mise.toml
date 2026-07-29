@@ -1,5 +1,6 @@
 [env]
 _.path = ["./node_modules/.bin", "./vendor/bin"]
+APP_URL = "http://localhost:{{ env.PORT | default(value='8000') }}"
 FORCE_COLOR = "1"
 NODE_OPTIONS = "--no-warnings"
 PHP_EXTRA_CONFIGURE_OPTIONS = "{% if os() == 'macos' %}--with-pdo-pgsql=/opt/homebrew/opt/libpq --with-pgsql=/opt/homebrew/opt/libpq{% else %}--with-pdo-pgsql --with-pgsql --without-sqlite3 --without-pdo-sqlite --disable-gd{% endif %}"
@@ -11,12 +12,6 @@ if command -v apt-get >/dev/null 2>&1; then
 fi
 """
 
-# An apt pin only stays resolvable for the noble/ release pocket, which never changes. Anything from
-# noble-updates or noble-security rotates — the archive carries the newest build alone — so a pin on
-# one of those fails the day Ubuntu ships the next security update, and those float here instead.
-# libpq-dev floats for a second reason: GitHub's runner image installs it and libpq5 from the
-# PostgreSQL apt repo (18.x) and then deletes the repo, leaving an archive pin asking for a libpq5
-# downgrade apt refuses to make. PHP links libpq.so.5 whichever it gets.
 [bootstrap.packages]
 "apt:autoconf" = "2.71-3"
 "apt:bison" = "2:3.8.2+dfsg-1build2"
@@ -43,10 +38,12 @@ lockfile = true
 quiet = true
 
 [tools]
+bun = "1.3.14"
 claude = "2.1.220"
 cloudflared = "2026.7.3"
-nub = "0.5.0"
+node = "26.5.0"
 php = "8.5.0"
+watchexec = "2.5.1"
 
 [tasks.cc]
 description = "Run Claude Code with permission prompts skipped"
@@ -57,7 +54,7 @@ description = "Install dependencies, start infra, and build (run via `mise boots
 depends_post = ["up", "build"]
 run = """
 composer install
-nub install
+bun install
 """
 
 [tasks.build]
@@ -84,7 +81,7 @@ run = "pint --parallel"
 [tasks."check:test"]
 description = "Run the test suite"
 depends = ["check:php", "up"]
-run = "php artisan test --compact"
+run = "pest --compact"
 
 [tasks."check:types"]
 description = "Typecheck the PHP code"
@@ -93,7 +90,7 @@ run = "phpstan analyse --memory-limit=1G"
 
 [tasks.clean]
 description = "Clean the project"
-run = "rm -rf .playwright* node_modules vendor"
+run = "rm -rf .playwright* frankenphp node_modules vendor"
 
 [tasks.rum_token]
 description = "Fetch the current RUM token from OpenObserve and print it to stdout"
@@ -103,11 +100,29 @@ run = 'curl -s -u "${ZO_ROOT_USER_EMAIL:-root@appos.sh}:${ZO_ROOT_USER_PASSWORD:
 description = "Start the development environment (server and worker)"
 depends = ["up"]
 depends_post = ["dev:*"]
-run = "mkdir -p tmp && : > tmp/dev.log"
+# optimize:clear runs every time on purpose. A stale bootstrap/cache/config.php silently ignores .env
+# and is the classic "why is my change not taking effect" day-long debug; dev should never inherit it.
+run = """
+mkdir -p tmp && : > tmp/dev.log
+php artisan optimize:clear
+"""
 
 [tasks."dev:server"]
 hide = true
-run = "php artisan serve --host=0.0.0.0 --port=${PORT:-8000} 2>&1 | tee -a tmp/dev.log"
+run = "php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=${PORT:-8000} 2>&1 | tee -a tmp/dev.log"
+
+# Octane's own --watch is hardcoded to chokidar (vendor/laravel/octane/bin/file-watcher.cjs), so the
+# reload is driven by watchexec instead. octane:reload restarts the workers without dropping the
+# listening socket, so the browser never races a restart. Vite HMR is untouched.
+[tasks."dev:watch"]
+hide = true
+run = """
+watchexec --postpone \
+  --watch app --watch bootstrap --watch config --watch database --watch resources \
+  --watch routes --watch composer.lock \
+  --filter '*.php' --filter 'composer.lock' \
+  -- php artisan octane:reload 2>&1 | tee -a tmp/dev.log
+"""
 
 [tasks."dev:vite"]
 hide = true
@@ -136,5 +151,5 @@ description = "Preview the production build in the Docker Compose cluster"
 depends = ["up"]
 run = """
 trap 'docker compose --profile=app down --remove-orphans --timeout=0 --volumes' EXIT
-OO_RUM_CLIENT_TOKEN=$(mise rum_token) docker compose --profile=app up --build --scale --scale worker=${WORKER_REPLICAS:-1}
+OO_RUM_CLIENT_TOKEN=$(mise rum_token) docker compose --profile=app up --build --scale worker=${WORKER_REPLICAS:-1}
 """

@@ -6,7 +6,14 @@ import laravel from "laravel-vite-plugin";
 import { bunny } from "laravel-vite-plugin/fonts";
 import { defineConfig } from "vite-plus";
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // Build only. The runtime image ships bootstrap/ssr without node_modules, so the bundle has to be
+  // self-contained. In dev it would drag CJS packages like react through the ESM module runner,
+  // which fails on their `module.exports` entry points.
+  ssr: {
+    // `false` is not an accepted value here, so dev gets an empty list instead.
+    noExternal: command === "build" ? true : [],
+  },
   fmt: {
     ignorePatterns: [],
     sortImports: true,
@@ -254,4 +261,4 @@ export default defineConfig({
       formVariants: true,
     }),
   ],
-});
+}));
