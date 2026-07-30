@@ -7,11 +7,11 @@
   "sail": false,
   "skills": [
     "fortify-development",
-    "inertia-react-development",
     "laravel-best-practices",
     "octane-development",
+    "wayfinder-development",
     "pest-testing",
-    "tailwindcss-development",
-    "wayfinder-development"
+    "inertia-react-development",
+    "tailwindcss-development"
   ]
 }

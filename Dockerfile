@@ -3,7 +3,9 @@
 FROM composer:2 AS composer
 
 FROM dunglas/frankenphp:1.12.6-php8.5-bookworm AS base
-RUN install-php-extensions pcntl pdo_pgsql intl opcache
+# uv backs Reverb's event loop; without it ReactPHP falls back to stream_select and caps at ~1024
+# concurrent WebSocket connections.
+RUN install-php-extensions pcntl pdo_pgsql intl opcache uv
 WORKDIR /app
 
 # zip serves Composer's --prefer-dist extraction only, so it stays out of the runtime.
