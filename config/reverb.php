@@ -40,13 +40,13 @@ return [
             'scaling' => [
                 'enabled' => env('REVERB_SCALING_ENABLED', false),
                 'channel' => env('REVERB_SCALING_CHANNEL', 'reverb'),
+                // Reverb resolves this through ConfigurationUrlParser, which merges the URL's
+                // components over the discrete keys, so a URL silently wins over any host, port,
+                // username, password, or database set alongside it. Only the URL is offered here so
+                // there is one way to point Reverb at Redis. timeout is read straight off this array
+                // rather than through the URL, so it stays separate.
                 'server' => [
-                    'url' => env('REDIS_URL'),
-                    'host' => env('REDIS_HOST', '127.0.0.1'),
-                    'port' => env('REDIS_PORT', '6379'),
-                    'username' => env('REDIS_USERNAME'),
-                    'password' => env('REDIS_PASSWORD'),
-                    'database' => env('REDIS_DB', '0'),
+                    'url' => env('REDIS_URL', 'redis://127.0.0.1:6379'),
                     'timeout' => env('REDIS_TIMEOUT', 60),
                 ],
             ],

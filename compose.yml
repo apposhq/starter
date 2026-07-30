@@ -1,25 +1,28 @@
+# Defined once so the credential is not repeated between openobserve and the services shipping it telemetry.
+x-oo_user: &oo_user ${ZO_ROOT_USER_EMAIL:-root@appos.sh}
+x-oo_password: &oo_password ${ZO_ROOT_USER_PASSWORD:-Openobserve1!}
+
+# Only settings that differ from the image or config default appear here. The internal ports are not
+# among them: the Caddyfile addresses server:8000 and reverb:8080 directly, so a PORT or REVERB_PORT
+# override would move the listener and leave the proxy pointing at nothing. PROXY_HTTP_PORT and
+# PROXY_HTTPS_PORT are the ports that can actually be changed.
 x-app_config: &app_config
   build:
     context: .
     dockerfile: ./Dockerfile
   environment:
-    APP_KEY: ${APP_KEY:-base64:g7J5n6MtDAj0ppG9TbzJ6eLWXcQgtPK0HufPZLo8Td0=}
     APP_DEBUG: ${APP_DEBUG:-false}
-    APP_ENV: ${APP_ENV:-production}
+    APP_KEY: ${APP_KEY:-base64:g7J5n6MtDAj0ppG9TbzJ6eLWXcQgtPK0HufPZLo8Td0=}
     APP_URL: ${APP_URL:-http://localhost:8000}
     DB_URL_PRIMARY: ${DB_URL_PRIMARY:-postgresql://postgres:postgres@postgres:5432/primary}
     GIT_ROOT: ${GIT_ROOT:-/data/repos}
     OO_OTLP_ENDPOINT: ${OO_OTLP_ENDPOINT:-http://openobserve:5080/api/default}
-    OO_USER: ${ZO_ROOT_USER_EMAIL:-root@appos.sh}
-    OO_PASSWORD: ${ZO_ROOT_USER_PASSWORD:-Openobserve1!}
-    PORT: ${PORT:-8000}
-    REVERB_HOST: ${REVERB_HOST:-reverb}
-    REVERB_PORT: ${REVERB_PORT:-8080}
-    REVERB_SCHEME: ${REVERB_SCHEME:-http}
+    OO_PASSWORD: *oo_password
+    OO_USER: *oo_user
     # Redis pub/sub fans broadcasts across reverb replicas.
+    REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    REVERB_HOST: ${REVERB_HOST:-reverb}
     REVERB_SCALING_ENABLED: ${REVERB_SCALING_ENABLED:-true}
-    REDIS_HOST: ${REDIS_HOST:-redis}
-    REDIS_PORT: ${REDIS_PORT:-6379}
   # The server and worker share the repos volume; git's lockfiles make concurrent access safe.
   volumes:
     - repos:/data/repos
@@ -112,7 +115,7 @@ services:
         limits:
           memory: ${REDIS_MEMORY:-256M}
     ports:
-      - ${INFRA_BIND:-127.0.0.1}:${REDIS_PORT_PUBLISHED:-6379}:6379
+      - ${INFRA_BIND:-127.0.0.1}:${REDIS_PORT:-6379}:6379
     profiles:
       - infra
     volumes:
@@ -124,8 +127,8 @@ services:
   openobserve:
     image: openobserve/openobserve:${OPENOBSERVE_VERSION:-v0.91.2}
     environment:
-      ZO_ROOT_USER_EMAIL: ${ZO_ROOT_USER_EMAIL:-root@appos.sh}
-      ZO_ROOT_USER_PASSWORD: ${ZO_ROOT_USER_PASSWORD:-Openobserve1!}
+      ZO_ROOT_USER_EMAIL: *oo_user
+      ZO_ROOT_USER_PASSWORD: *oo_password
       ZO_DATA_DIR: /data
       # Browser RUM posts cross-origin, so its origin must be allow-listed. Defaults cover local dev
       # and preview; add production domains.
