@@ -91,7 +91,8 @@ return [
     |
     | The default below is a throwaway so a fresh clone boots with no setup. It is committed, so
     | treat it as public: anything it encrypts is readable by anyone with the repository. Every
-    | deployment must pass a real APP_KEY, and compose.yml refuses to start without one.
+    | deployment must pass a real APP_KEY. compose.yml only defaults to this throwaway, so nothing
+    | stops a deployment booting with it.
     |
     | Generate one with: php -r 'echo "base64:".base64_encode(random_bytes(32)), PHP_EOL;'
     |

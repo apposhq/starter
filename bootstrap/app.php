@@ -11,9 +11,10 @@ use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
+        channels: __DIR__.'/../routes/channels.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        web: __DIR__.'/../routes/web.php',
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // dev:tunnel runs cloudflared on this host, terminating TLS and forwarding to the plain HTTP

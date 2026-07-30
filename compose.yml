@@ -9,10 +9,17 @@ x-app_config: &app_config
     APP_URL: ${APP_URL:-http://localhost:8000}
     DB_URL_PRIMARY: ${DB_URL_PRIMARY:-postgresql://postgres:postgres@postgres:5432/primary}
     GIT_ROOT: ${GIT_ROOT:-/data/repos}
-    PORT: ${PORT:-8000}
     OO_OTLP_ENDPOINT: ${OO_OTLP_ENDPOINT:-http://openobserve:5080/api/default}
     OO_USER: ${ZO_ROOT_USER_EMAIL:-root@appos.sh}
     OO_PASSWORD: ${ZO_ROOT_USER_PASSWORD:-Openobserve1!}
+    PORT: ${PORT:-8000}
+    REVERB_HOST: ${REVERB_HOST:-reverb}
+    REVERB_PORT: ${REVERB_PORT:-8080}
+    REVERB_SCHEME: ${REVERB_SCHEME:-http}
+    # Redis pub/sub fans broadcasts across reverb replicas.
+    REVERB_SCALING_ENABLED: ${REVERB_SCALING_ENABLED:-true}
+    REDIS_HOST: ${REDIS_HOST:-redis}
+    REDIS_PORT: ${REDIS_PORT:-6379}
   # The server and worker share the repos volume; git's lockfiles make concurrent access safe.
   volumes:
     - repos:/data/repos
@@ -24,6 +31,26 @@ x-app_config: &app_config
   stop_grace_period: 30s
 
 configs:
+  caddyfile:
+    content: |
+      {$$CADDY_SITE_ADDRESS} {
+      	handle /app/* {
+      		reverse_proxy {
+      			dynamic a reverb 8080
+      		}
+      	}
+      	handle /apps/* {
+      		reverse_proxy {
+      			dynamic a reverb 8080
+      		}
+      	}
+      	handle {
+      		reverse_proxy {
+      			dynamic a server 8000
+      		}
+      	}
+      }
+
   postgres_initdb:
     content: |
       \set databases `echo "$$POSTGRES_DATABASES"`
@@ -35,7 +62,7 @@ configs:
 
 services:
   postgres:
-    image: postgres:19beta1
+    image: postgres:${POSTGRES_VERSION:-19beta1}
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
@@ -56,8 +83,12 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: ${POSTGRES_MEMORY:-1G}
     ports:
-      - 5432:5432
+      - ${INFRA_BIND:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432
     profiles:
       - infra
     configs:
@@ -67,10 +98,31 @@ services:
       - pgdata:/home/postgres/pgdata
     restart: unless-stopped
 
+  # Reverb pub/sub. Uses clue/redis-react, so the app image needs no ext-redis.
+  redis:
+    image: redis:${REDIS_VERSION:-8.8.1-alpine}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: ${REDIS_MEMORY:-256M}
+    ports:
+      - ${INFRA_BIND:-127.0.0.1}:${REDIS_PORT_PUBLISHED:-6379}:6379
+    profiles:
+      - infra
+    volumes:
+      - redisdata:/data
+    restart: unless-stopped
+
   # Observability (logs, metrics, traces, RUM, session replay) for the primary and its apps; backs
   # the per-app dashboards and the @appos/o11y primitive. Single binary, ~140x cheaper than ELK/Datadog.
   openobserve:
-    image: openobserve/openobserve:v0.91.2
+    image: openobserve/openobserve:${OPENOBSERVE_VERSION:-v0.91.2}
     environment:
       ZO_ROOT_USER_EMAIL: ${ZO_ROOT_USER_EMAIL:-root@appos.sh}
       ZO_ROOT_USER_PASSWORD: ${ZO_ROOT_USER_PASSWORD:-Openobserve1!}
@@ -79,7 +131,7 @@ services:
       # and preview; add production domains.
       ZO_CORS_ALLOWED_ORIGINS: ${ZO_CORS_ALLOWED_ORIGINS:-http://localhost:8000,https://localhost}
     ports:
-      - 5080:5080
+      - ${INFRA_BIND:-127.0.0.1}:${OPENOBSERVE_PORT:-5080}:5080
     profiles:
       - infra
     volumes:
@@ -88,20 +140,63 @@ services:
 
   server:
     <<: *app_config
-    ports:
-      - ${PORT:-8000}:${PORT:-8000}
+    deploy:
+      resources:
+        limits:
+          memory: ${SERVER_MEMORY:-1G}
 
-  # Octane holds the booted app in memory, so the queue worker is a separate process rather than a
-  # thread of the server. --max-jobs/--max-time recycle it before a leak can accumulate.
-  worker:
+  # Single entrypoint so server and reverb can both scale; caddy re-resolves replicas via dynamic a.
+  proxy:
+    image: caddy:${CADDY_VERSION:-2.11.4-alpine}
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
+    deploy:
+      resources:
+        limits:
+          memory: ${PROXY_MEMORY:-256M}
+    environment:
+      CADDY_SITE_ADDRESS: ${CADDY_SITE_ADDRESS:-:80}
+    ports:
+      - ${PROXY_HTTP_PORT:-8000}:80
+      - ${PROXY_HTTPS_PORT:-8443}:443
+    profiles:
+      - app
+    restart: unless-stopped
+    # Persist issued certificates; without this prod re-requests on every restart and hits ACME limits.
+    volumes:
+      - caddydata:/data
+
+  # Separate from `server` so websocket and http load scale independently.
+  reverb:
     <<: *app_config
-    # Both services share one image, so the image's HTTP healthcheck has to be dropped here: the
-    # worker serves no HTTP and would otherwise report unhealthy forever and stall `up --wait`.
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1', 8080) ? 0 : 1);"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: ${REVERB_MEMORY:-512M}
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+
+  # Recycle limits cap memory growth in the long-lived worker.
+  worker:
+    deploy:
+      resources:
+        limits:
+          memory: ${WORKER_MEMORY:-256M}
+    <<: *app_config
+    # Shares the image but serves no HTTP, so the image healthcheck cannot apply.
     healthcheck:
       disable: true
     command: ["php", "artisan", "queue:work", "--tries=3", "--max-jobs=1000", "--max-time=3600"]
 
 volumes:
+  caddydata:
   pgdata:
   o2data:
+  redisdata:
   repos:

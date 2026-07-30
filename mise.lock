@@ -39,8 +39,20 @@ backend = "aqua:anthropics/claude-code"
 [tools.claude."platforms.linux-arm64"]
 url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/2.1.220/linux-arm64/claude"
 
+[tools.claude."platforms.linux-arm64-musl"]
+url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/2.1.220/linux-arm64-musl/claude"
+
 [tools.claude."platforms.linux-x64"]
 url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/2.1.220/linux-x64/claude"
+
+[tools.claude."platforms.linux-x64-baseline"]
+url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/2.1.220/linux-x64/claude"
+
+[tools.claude."platforms.linux-x64-musl"]
+url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/2.1.220/linux-x64-musl/claude"
+
+[tools.claude."platforms.linux-x64-musl-baseline"]
+url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/2.1.220/linux-x64-musl/claude"
 
 [tools.claude."platforms.macos-arm64"]
 url = "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/2.1.220/darwin-arm64/claude"
@@ -54,7 +66,27 @@ checksum = "sha256:65259e652a7bea08bf5df603233ab22b8bf3116af8df9f9206209af6a1b95
 url = "https://github.com/cloudflare/cloudflared/releases/download/2026.7.3/cloudflared-linux-arm64"
 url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/487053052"
 
+[tools.cloudflared."platforms.linux-arm64-musl"]
+checksum = "sha256:65259e652a7bea08bf5df603233ab22b8bf3116af8df9f9206209af6a1b955c0"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.7.3/cloudflared-linux-arm64"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/487053052"
+
 [tools.cloudflared."platforms.linux-x64"]
+checksum = "sha256:9d71c677db00134c1bd4144b7783486b654ad281b1ea62b4972098d19f770f17"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.7.3/cloudflared-linux-amd64"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/487052912"
+
+[tools.cloudflared."platforms.linux-x64-baseline"]
+checksum = "sha256:9d71c677db00134c1bd4144b7783486b654ad281b1ea62b4972098d19f770f17"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.7.3/cloudflared-linux-amd64"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/487052912"
+
+[tools.cloudflared."platforms.linux-x64-musl"]
+checksum = "sha256:9d71c677db00134c1bd4144b7783486b654ad281b1ea62b4972098d19f770f17"
+url = "https://github.com/cloudflare/cloudflared/releases/download/2026.7.3/cloudflared-linux-amd64"
+url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/487052912"
+
+[tools.cloudflared."platforms.linux-x64-musl-baseline"]
 checksum = "sha256:9d71c677db00134c1bd4144b7783486b654ad281b1ea62b4972098d19f770f17"
 url = "https://github.com/cloudflare/cloudflared/releases/download/2026.7.3/cloudflared-linux-amd64"
 url_api = "https://api.github.com/repos/cloudflare/cloudflared/releases/assets/487052912"
@@ -72,13 +104,68 @@ backend = "core:node"
 checksum = "sha256:308e5fe89a82461ba5a6cf15ff5221b2cdbd7ae87600aa72bb3c3fbdc66412d1"
 url = "https://nodejs.org/dist/v26.5.0/node-v26.5.0-linux-arm64.tar.gz"
 
+[tools.node."platforms.linux-arm64-musl"]
+checksum = "sha256:1ab31aef6561191693f366cacd75bbcefa0301e49a18bc05554c21893bbdb490"
+url = "https://unofficial-builds.nodejs.org/download/release/v26.5.0/node-v26.5.0-linux-arm64-musl.tar.gz"
+
 [tools.node."platforms.linux-x64"]
 checksum = "sha256:22b5f47ad6ae78837e4c2b846019965ce1a06ba143de176102294a1bf44fc677"
 url = "https://nodejs.org/dist/v26.5.0/node-v26.5.0-linux-x64.tar.gz"
 
+[tools.node."platforms.linux-x64-baseline"]
+checksum = "sha256:22b5f47ad6ae78837e4c2b846019965ce1a06ba143de176102294a1bf44fc677"
+url = "https://nodejs.org/dist/v26.5.0/node-v26.5.0-linux-x64.tar.gz"
+
+[tools.node."platforms.linux-x64-musl"]
+checksum = "sha256:00f1398411a4216c5a6ecaad3b825a0da5ec00e79ee8c173ab65a094d97b9ad8"
+url = "https://unofficial-builds.nodejs.org/download/release/v26.5.0/node-v26.5.0-linux-x64-musl.tar.gz"
+
+[tools.node."platforms.linux-x64-musl-baseline"]
+checksum = "sha256:00f1398411a4216c5a6ecaad3b825a0da5ec00e79ee8c173ab65a094d97b9ad8"
+url = "https://unofficial-builds.nodejs.org/download/release/v26.5.0/node-v26.5.0-linux-x64-musl.tar.gz"
+
 [tools.node."platforms.macos-arm64"]
 checksum = "sha256:ee920559aaa2391569cff4d737e3b83963430e3a14dedd91bfe0ff53171b5af9"
 url = "https://nodejs.org/dist/v26.5.0/node-v26.5.0-darwin-arm64.tar.gz"
+
+[[tools.oha]]
+version = "1.15.0"
+backend = "aqua:hatoo/oha"
+
+[tools.oha."platforms.linux-arm64"]
+checksum = "sha256:72d5bf4575cede9f9277f93f097b904f893b0f0cd4d92f0869439b05e1403731"
+url = "https://github.com/hatoo/oha/releases/download/v1.15.0/oha-linux-arm64"
+url_api = "https://api.github.com/repos/hatoo/oha/releases/assets/473313831"
+
+[tools.oha."platforms.linux-arm64-musl"]
+checksum = "sha256:72d5bf4575cede9f9277f93f097b904f893b0f0cd4d92f0869439b05e1403731"
+url = "https://github.com/hatoo/oha/releases/download/v1.15.0/oha-linux-arm64"
+url_api = "https://api.github.com/repos/hatoo/oha/releases/assets/473313831"
+
+[tools.oha."platforms.linux-x64"]
+checksum = "sha256:86ab7fa2c1df23b3bbc53b73561ffa44a7a38ca08f0e10351df9522a5c4c3c61"
+url = "https://github.com/hatoo/oha/releases/download/v1.15.0/oha-linux-amd64"
+url_api = "https://api.github.com/repos/hatoo/oha/releases/assets/473312034"
+
+[tools.oha."platforms.linux-x64-baseline"]
+checksum = "sha256:86ab7fa2c1df23b3bbc53b73561ffa44a7a38ca08f0e10351df9522a5c4c3c61"
+url = "https://github.com/hatoo/oha/releases/download/v1.15.0/oha-linux-amd64"
+url_api = "https://api.github.com/repos/hatoo/oha/releases/assets/473312034"
+
+[tools.oha."platforms.linux-x64-musl"]
+checksum = "sha256:86ab7fa2c1df23b3bbc53b73561ffa44a7a38ca08f0e10351df9522a5c4c3c61"
+url = "https://github.com/hatoo/oha/releases/download/v1.15.0/oha-linux-amd64"
+url_api = "https://api.github.com/repos/hatoo/oha/releases/assets/473312034"
+
+[tools.oha."platforms.linux-x64-musl-baseline"]
+checksum = "sha256:86ab7fa2c1df23b3bbc53b73561ffa44a7a38ca08f0e10351df9522a5c4c3c61"
+url = "https://github.com/hatoo/oha/releases/download/v1.15.0/oha-linux-amd64"
+url_api = "https://api.github.com/repos/hatoo/oha/releases/assets/473312034"
+
+[tools.oha."platforms.macos-arm64"]
+checksum = "sha256:fc8ccb4126737aae85cc9fbc6f95b161bf8bbb676bf02d4bb6196ec02c709c36"
+url = "https://github.com/hatoo/oha/releases/download/v1.15.0/oha-macos-amd64"
+url_api = "https://api.github.com/repos/hatoo/oha/releases/assets/473313931"
 
 [[tools.php]]
 version = "8.5.0"
@@ -87,7 +174,19 @@ backend = "vfox:php"
 [tools.php."platforms.linux-arm64"]
 url = "https://github.com/php/php-src/archive/php-8.5.0.tar.gz"
 
+[tools.php."platforms.linux-arm64-musl"]
+url = "https://github.com/php/php-src/archive/php-8.5.0.tar.gz"
+
 [tools.php."platforms.linux-x64"]
+url = "https://github.com/php/php-src/archive/php-8.5.0.tar.gz"
+
+[tools.php."platforms.linux-x64-baseline"]
+url = "https://github.com/php/php-src/archive/php-8.5.0.tar.gz"
+
+[tools.php."platforms.linux-x64-musl"]
+url = "https://github.com/php/php-src/archive/php-8.5.0.tar.gz"
+
+[tools.php."platforms.linux-x64-musl-baseline"]
 url = "https://github.com/php/php-src/archive/php-8.5.0.tar.gz"
 
 [tools.php."platforms.macos-arm64"]
@@ -102,7 +201,27 @@ checksum = "sha256:c073887583d502fa0b393a8b847bb4460a111b3b0a199d1f70dafd5d89e71
 url = "https://github.com/watchexec/watchexec/releases/download/v2.5.1/watchexec-2.5.1-aarch64-unknown-linux-musl.tar.xz"
 url_api = "https://api.github.com/repos/watchexec/watchexec/releases/assets/384489962"
 
+[tools.watchexec."platforms.linux-arm64-musl"]
+checksum = "sha256:c073887583d502fa0b393a8b847bb4460a111b3b0a199d1f70dafd5d89e71a2f"
+url = "https://github.com/watchexec/watchexec/releases/download/v2.5.1/watchexec-2.5.1-aarch64-unknown-linux-musl.tar.xz"
+url_api = "https://api.github.com/repos/watchexec/watchexec/releases/assets/384489962"
+
 [tools.watchexec."platforms.linux-x64"]
+checksum = "sha256:9efabd08de720c1ee7e57b487fe11904f0966828e76146e2b5ea5deee90626be"
+url = "https://github.com/watchexec/watchexec/releases/download/v2.5.1/watchexec-2.5.1-x86_64-unknown-linux-musl.tar.xz"
+url_api = "https://api.github.com/repos/watchexec/watchexec/releases/assets/384489936"
+
+[tools.watchexec."platforms.linux-x64-baseline"]
+checksum = "sha256:9efabd08de720c1ee7e57b487fe11904f0966828e76146e2b5ea5deee90626be"
+url = "https://github.com/watchexec/watchexec/releases/download/v2.5.1/watchexec-2.5.1-x86_64-unknown-linux-musl.tar.xz"
+url_api = "https://api.github.com/repos/watchexec/watchexec/releases/assets/384489936"
+
+[tools.watchexec."platforms.linux-x64-musl"]
+checksum = "sha256:9efabd08de720c1ee7e57b487fe11904f0966828e76146e2b5ea5deee90626be"
+url = "https://github.com/watchexec/watchexec/releases/download/v2.5.1/watchexec-2.5.1-x86_64-unknown-linux-musl.tar.xz"
+url_api = "https://api.github.com/repos/watchexec/watchexec/releases/assets/384489936"
+
+[tools.watchexec."platforms.linux-x64-musl-baseline"]
 checksum = "sha256:9efabd08de720c1ee7e57b487fe11904f0966828e76146e2b5ea5deee90626be"
 url = "https://github.com/watchexec/watchexec/releases/download/v2.5.1/watchexec-2.5.1-x86_64-unknown-linux-musl.tar.xz"
 url_api = "https://api.github.com/repos/watchexec/watchexec/releases/assets/384489936"
