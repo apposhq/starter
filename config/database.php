@@ -1,5 +1,24 @@
 <?php
 
+use Illuminate\Support\Str;
+use Illuminate\Support\Uri;
+
+$url = (string) env('DB_URL', sprintf(
+    'postgresql://postgres:postgres@localhost:5432/%s?sslmode=prefer',
+    Str::slug((string) config('app.name'), '_'),
+));
+
+/**
+ * The suite runs against the `_test` companion the compose init script creates beside the main database,
+ * because RefreshDatabase drops every table and must not do that to development data.
+ *
+ * Suffixed here rather than configured in phpunit.xml, so the name cannot drift from whatever DB_URL or
+ * POSTGRES_DB actually names — the init script derives it the same way, from current_database().
+ */
+if (env('APP_ENV') === 'testing') {
+    $url = (string) Uri::of($url)->withPath(Uri::of($url)->path().'_test');
+}
+
 return [
 
     /*
@@ -14,28 +33,31 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'primary'),
+    'default' => env('DB_CONNECTION', 'pgsql'),
 
     /*
     |--------------------------------------------------------------------------
     | Database Connections
     |--------------------------------------------------------------------------
     |
-    | Every connection is configured from a single `DB_URL_<NAME>` variable so a
-    | connection can be added by declaring one variable and one block here. The
-    | cache, session, and queue stores leave their `connection` unset, so they
-    | all resolve to the default connection named below.
+    | One connection, configured from one URL. The cache, session and queue stores
+    | leave their `connection` unset so they all resolve to the default below.
+    |
+    | A second database is deliberately not set up for. Laravel migrates and
+    | refreshes one connection at a time — `migrate:fresh` drops only the default
+    | connection, and RefreshDatabase issues a single `migrate:fresh` — so adding
+    | one means owning that gap in every test run. See laravel/framework#55194.
     |
     */
 
     'connections' => [
 
-        'primary' => [
+        'pgsql' => [
             'driver' => 'pgsql',
             // One variable, not two: ConfigurationUrlParser merges a URL's query string into the
             // connection config, so `?sslmode=require` arrives as the `sslmode` key. A separate
-            // DB_SSLMODE_PRIMARY would be a second thing to remember to change when moving databases.
-            'url' => env('DB_URL_PRIMARY', 'postgresql://postgres:postgres@localhost:5432/primary?sslmode=prefer'),
+            // DB_SSLMODE would be a second thing to remember when moving databases.
+            'url' => $url,
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,

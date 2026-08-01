@@ -1,7 +1,15 @@
 # Starter
 
-Multi-tenant SaaS starter. Laravel 13 + Octane, Inertia 3 + React 19, Postgres, OpenTelemetry.
-Teams, passkeys and 2FA are built — add features on top.
+A Laravel starter for multi-tenant SaaS.
+
+Teams, roles, invitations, passkeys and two-factor sign-in are already built. Tenancy is enforced by the
+URL, so any route placed inside the team group is scoped to that team without a controller doing anything.
+
+Observability is wired end to end. Traces, metrics, logs, browser errors and session replay all land in
+one self-hosted store, and a JavaScript error carries the trace id of the request that caused it.
+
+Development runs the drivers production runs: mail over SMTP to a local inbox, files over the S3 driver
+to a local object store. The application refuses to boot in production while still pointed at either.
 
 ## Run
 
@@ -114,35 +122,38 @@ Everything a deployment must set, and nothing it does not. ⚠ marks a value wit
 committed to this repo, which is what makes it dangerous — skipping it fails nothing. 🛑 is enforced:
 the app refuses to boot outside local/preview while still pointed at a development service.
 
-| Variable                | `mise dev`                                                             | Set it to                                                       |
-| ----------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------- |
-| `APP_KEY`               | ⚠ `base64:g7J5n6…PZLo8Td0=`                                            | A generated key — it signs signed URLs and verification links   |
-| `APP_URL`               | `http://localhost:8000`                                                | The public origin; drives Reverb origins and URL generation     |
-| `AWS_ACCESS_KEY_ID`     | ⚠ `starter`                                                            | Object storage credential                                       |
-| `AWS_SECRET_ACCESS_KEY` | ⚠ `starter`                                                            | Object storage credential                                       |
-| `AWS_DEFAULT_REGION`    | `us-east-1`                                                            | The bucket's region                                             |
-| `AWS_ENDPOINT`          | 🛑 `http://localhost:8333`                                             | Empty for AWS itself; the endpoint for R2, Spaces, B2, Tigris   |
-| `AWS_PRIVATE_BUCKET`    | `starter-private`                                                      | Bucket for user data, read through presigned URLs               |
-| `AWS_PUBLIC_BUCKET`     | `starter-public`                                                       | Bucket for public assets, served without a signature            |
-| `DB_URL_PRIMARY`        | `postgresql://postgres:postgres@localhost:5432/primary?sslmode=prefer` | Postgres; also carries sessions, cache and the queue            |
-| `MAIL_URL`              | 🛑 `smtp://localhost:1025`                                             | `smtp://user:pass@host:587`                                     |
-| `OO_OTLP_ENDPOINT`      | `http://localhost:5080/api/default`                                    | Your OpenObserve Cloud region and organization                  |
-| `OO_USER`               | ⚠ `root@example.com`                                                   | OpenObserve Cloud login                                         |
-| `OO_PASSWORD`           | ⚠ `Password1!`                                                         | OpenObserve Cloud credential                                    |
-| `OO_RUM_CLIENT_TOKEN`   | resolved automatically                                                 | The token OpenObserve issues; only local and preview self-fetch |
-| `REDIS_URL`             | _(unset — `127.0.0.1:6379`)_                                           | Redis, for Reverb's pub/sub fan-out                             |
-| `REVERB_APP_KEY`        | ⚠ `starter-key`                                                        | Public websocket key                                            |
-| `REVERB_APP_SECRET`     | ⚠ `starter-secret`                                                     | Signs private and presence channel authorisation                |
-| `REVERB_HOST`           | `localhost`                                                            | Where browsers reach Reverb                                     |
+| Variable                | `mise dev`                                            | Set it to                                                       |
+| ----------------------- | ----------------------------------------------------- | --------------------------------------------------------------- |
+| `APP_KEY`               | ⚠ `base64:g7J5n6…PZLo8Td0=`                           | A generated key — it signs signed URLs and verification links   |
+| `APP_URL`               | `http://localhost:8000`                               | The public origin; drives Reverb origins and URL generation     |
+| `AWS_ACCESS_KEY_ID`     | ⚠ `starter`                                           | Object storage credential                                       |
+| `AWS_SECRET_ACCESS_KEY` | ⚠ `starter`                                           | Object storage credential                                       |
+| `AWS_DEFAULT_REGION`    | `us-east-1`                                           | The bucket's region                                             |
+| `AWS_ENDPOINT`          | 🛑 `http://localhost:8333`                            | Empty for AWS itself; the endpoint for R2, Spaces, B2, Tigris   |
+| `AWS_PRIVATE_BUCKET`    | `<app>-<env>-private`                                 | Bucket for user data, read through presigned URLs               |
+| `AWS_PUBLIC_BUCKET`     | `<app>-<env>-public`                                  | Bucket for public assets, served without a signature            |
+| `DB_URL`                | `postgresql://postgres:postgres@localhost:5432/<app>` | Postgres; also carries sessions, cache and the queue            |
+| `MAIL_URL`              | 🛑 `smtp://localhost:1025`                            | `smtp://user:pass@host:587`                                     |
+| `OO_OTLP_ENDPOINT`      | `http://localhost:5080/api/default`                   | Your OpenObserve Cloud region and organization                  |
+| `OO_USER`               | ⚠ `root@example.com`                                  | OpenObserve Cloud login                                         |
+| `OO_PASSWORD`           | ⚠ `Password1!`                                        | OpenObserve Cloud credential                                    |
+| `OO_RUM_CLIENT_TOKEN`   | resolved automatically                                | The token OpenObserve issues; only local and preview self-fetch |
+| `REDIS_URL`             | _(unset — `127.0.0.1:6379`)_                          | Redis, for Reverb's pub/sub fan-out                             |
+| `REVERB_APP_KEY`        | ⚠ `starter-key`                                       | Public websocket key                                            |
+| `REVERB_APP_SECRET`     | ⚠ `starter-secret`                                    | Signs private and presence channel authorisation                |
+| `REVERB_HOST`           | `localhost`                                           | Where browsers reach Reverb                                     |
 
-Derived, so normally left alone: `AWS_USE_PATH_STYLE_ENDPOINT` (on unless `AWS_ENDPOINT` is empty),
-`REVERB_APP_ID` and the OTel service name (from `APP_NAME`), and the RUM host, scheme and organization
-(from `OO_OTLP_ENDPOINT`). Optional: `APP_NAME`, `AWS_PUBLIC_URL` for a CDN in front of the public
-bucket, `OO_RUM_RELEASE` to tie uploaded source maps to a build.
+**Set `APP_NAME` first.** Everything that names this application follows it: the database, both buckets,
+the OpenTelemetry service name, the RUM application id, the Reverb app id, the session cookie and the
+cache prefix. Rename it before you have data, because the database name changes with it.
 
-`POSTGRES_PASSWORD` and `ZO_ROOT_USER_PASSWORD` configure the local compose stack, not the app. Under
-`mise preview` the addresses above become compose service names — the nine keys `compose.yml` sets are
-exactly that difference.
+Also derived, so normally left alone: `AWS_USE_PATH_STYLE_ENDPOINT` (on unless `AWS_ENDPOINT` is empty)
+and the RUM host, scheme and organization (from `OO_OTLP_ENDPOINT`). Optional: `AWS_PUBLIC_URL` for a
+CDN in front of the public bucket, `OO_RUM_RELEASE` to tie uploaded source maps to a build.
+
+`POSTGRES_DB`, `POSTGRES_PASSWORD` and `ZO_ROOT_USER_PASSWORD` configure the local compose stack rather
+than the app. Under `mise preview` the addresses above become compose service names, which is the only
+difference that file describes.
 
 ## Commands
 

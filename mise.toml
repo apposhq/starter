@@ -107,6 +107,13 @@ run = "docker compose --profile=app --profile=infra down --remove-orphans --time
 description = "Start local infra containers"
 run = """
 if [ "$(docker compose --profile=infra ps --services --status running | sort)" != "$(docker compose --profile=infra config --services | sort)" ]; then
+  # seaweedfs grants anonymous read by bucket name, and the app derives those names from APP_NAME and
+  # APP_ENV — so the app is asked rather than the name being restated here. Both environments that run on
+  # this machine get one, because `mise preview` uses the same seaweedfs as `mise dev`.
+  bucket() { APP_ENV=$1 php artisan config:show filesystems.disks.s3_public.bucket | grep -v '^$' | tail -1 | awk '{print $NF}'; }
+  export PUBLIC_BUCKET_LOCAL=$(bucket local)
+  export PUBLIC_BUCKET_PREVIEW=$(bucket preview)
+
   docker compose --profile=infra up -d --wait
   # openobserve ships no healthcheck (distroless image - nothing to probe with), so --wait does not
   # gate on it. The app asks it for the RUM client token at boot, and losing that race turns browser
@@ -116,6 +123,8 @@ if [ "$(docker compose --profile=infra ps --services --status running | sort)" !
   # `mise down`, which takes the containers and volumes but never touches the working copy.
   php artisan storage:link --force
   php artisan storage:bucket
+  # Both environments share this seaweedfs, and each names its own buckets, so both are created here.
+  APP_ENV=preview php artisan storage:bucket
   php artisan migrate --force
   php artisan db:seed --force
 fi

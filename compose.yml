@@ -8,15 +8,10 @@ x-app_config: &app_config
     dockerfile: ./Dockerfile
   environment:
     APP_ENV: ${APP_ENV:-preview}
-    # Forwarded because the seaweedfs identity file below is built from the same variables: overriding a
-    # credential or bucket on the host has to move both sides, or the app authenticates with the old one
-    # and every upload is rejected with a 403 that nothing correlates back to here.
     AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-starter}
     AWS_ENDPOINT: ${AWS_ENDPOINT:-http://seaweedfs:8333}
-    AWS_PRIVATE_BUCKET: ${AWS_PRIVATE_BUCKET:-starter-private}
-    AWS_PUBLIC_BUCKET: ${AWS_PUBLIC_BUCKET:-starter-public}
     AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-starter}
-    DB_URL_PRIMARY: ${DB_URL_PRIMARY:-postgresql://postgres:postgres@postgres:5432/primary}
+    DB_URL: ${DB_URL:-postgresql://postgres:postgres@postgres:5432/${POSTGRES_DB:-starter}}
     MAIL_URL: ${MAIL_URL:-smtp://mailpit:1025}
     OO_OTLP_ENDPOINT: ${OO_OTLP_ENDPOINT:-http://openobserve:5080/api/default}
     OO_PASSWORD: *oo_password
@@ -40,18 +35,15 @@ configs:
           },
           {
             "name": "anonymous",
-            "actions": ["Read:${AWS_PUBLIC_BUCKET:-starter-public}"]
+            "actions": ["Read:${PUBLIC_BUCKET_LOCAL:-starter-local-public}", "Read:${PUBLIC_BUCKET_PREVIEW:-starter-preview-public}"]
           }
         ]
       }
 
   postgres_initdb:
     content: |
-      \set databases `echo "$$POSTGRES_DATABASES"`
-      SELECT format('CREATE DATABASE %I', name)
-      FROM unnest(string_to_array(:'databases', ',')) AS base,
-           LATERAL (VALUES (base), (base || '_test')) AS n(name)
-      WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = n.name)
+      SELECT format('CREATE DATABASE %I', current_database() || '_test')
+      WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = current_database() || '_test')
       \gexec
 
 services:
@@ -60,7 +52,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DATABASES: ${POSTGRES_DATABASES:-primary}
+      POSTGRES_DB: ${POSTGRES_DB:-starter}
       PGDATA: /home/postgres/pgdata
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d postgres"]
@@ -74,7 +66,7 @@ services:
       - infra
     configs:
       - source: postgres_initdb
-        target: /docker-entrypoint-initdb.d/create-databases.sql
+        target: /docker-entrypoint-initdb.d/create-test-database.sql
     restart: unless-stopped
 
   # Reverb pub/sub. Uses clue/redis-react, so the app image needs no ext-redis.
@@ -92,8 +84,6 @@ services:
       - infra
     restart: unless-stopped
 
-  # Observability (logs, metrics, traces, RUM, session replay) for the primary and its apps; backs
-  # the per-app dashboards. Single binary, ~140x cheaper than ELK/Datadog.
   openobserve:
     image: openobserve/openobserve:${OPENOBSERVE_VERSION:-v0.91.5}
     environment:

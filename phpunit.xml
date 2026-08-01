@@ -23,12 +23,10 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
-        <!-- The compose Postgres, but the `primary` companion: RefreshDatabase drops every table. -->
-        <env name="DB_CONNECTION" value="primary"/>
+        <env name="DB_CONNECTION" value="pgsql"/>
         <!-- No SSR server runs during tests; without this every Inertia response pays a failed
              connection to the SSR gateway before falling back to client rendering. -->
         <env name="INERTIA_SSR_ENABLED" value="false"/>
-        <env name="DB_URL_PRIMARY" value="postgresql://postgres:postgres@localhost:5432/primary_test"/>
         <!-- config/ defaults to the local stack, so without these the suite would mail through mailpit and
              write objects into seaweedfs. -->
         <env name="FILESYSTEM_DISK" value="local"/>

@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Str;
+
 /**
  * Connection settings shared by both object-storage disks. They address one service and differ only in
  * which bucket they open, so a second copy is a second place the endpoint can be changed — leaving one
@@ -11,6 +13,13 @@
  * path style follows the presence of an endpoint rather than being configured beside it.
  */
 $endpoint = env('AWS_ENDPOINT', 'http://localhost:8333') ?: null;
+
+/**
+ * Buckets are named `<app>-<environment>-<visibility>`, so renaming the application in config/app.php
+ * renames them, and no two environments can ever share one. A preview built from a feature branch writes
+ * to its own bucket rather than into production's, which is the failure this naming exists to prevent.
+ */
+$bucket = Str::slug((string) config('app.name')).'-'.config('app.env').'-';
 
 $objectStorage = [
     'driver' => 's3',
@@ -96,14 +105,14 @@ return [
 
         's3' => [
             ...$objectStorage,
-            'bucket' => env('AWS_PRIVATE_BUCKET', 'starter-private'),
+            'bucket' => env('AWS_PRIVATE_BUCKET', $bucket.'private'),
             'url' => env('AWS_URL') ?: null,
             'visibility' => 'private',
         ],
 
         's3_public' => [
             ...$objectStorage,
-            'bucket' => env('AWS_PUBLIC_BUCKET', 'starter-public'),
+            'bucket' => env('AWS_PUBLIC_BUCKET', $bucket.'public'),
             // Set AWS_PUBLIC_URL to the CDN or custom domain in front of the bucket. Left unset, Storage
             // ::url() falls back to the endpoint, which is correct locally and rarely what you want live.
             'url' => env('AWS_PUBLIC_URL') ?: null,
