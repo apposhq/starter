@@ -35,7 +35,11 @@ COPY mise.toml mise.lock ./
 RUN mise install --locked bun node
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
-RUN ./node_modules/.bin/vp build && ./node_modules/.bin/vp build --ssr
+# The .map files exist only so `php artisan rum:sourcemaps` can upload them; they must not reach the image, because
+# FrankenPHP serves public/ and a shipped map hands the whole TypeScript source to any visitor. Deleted
+# here rather than trusting the upload task, which runs on a developer's machine and not in this build.
+RUN ./node_modules/.bin/vp build && ./node_modules/.bin/vp build --ssr \
+ && find public/build bootstrap/ssr -name '*.map' -delete
 
 FROM base AS runtime
 COPY --from=assets /mise/installs/bun/latest/bin/bun /usr/local/bin/bun

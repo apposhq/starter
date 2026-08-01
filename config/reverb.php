@@ -1,5 +1,15 @@
 <?php
 
+// parse_url finds no host in a scheme-less value like `example.com`, and falling back to `*` there
+// disabled origin checking altogether — Reverb short-circuits the whole check on a wildcard, so a
+// missing scheme in APP_URL silently let any site open a socket. A scheme is prepended when one is
+// absent so a bare hostname still resolves; anything left unparseable yields an empty list, which
+// rejects every origin instead of accepting all of them.
+$appUrl = (string) config('app.url');
+$broadcaster = config()->array('broadcasting.connections.reverb');
+
+$appHost = (string) (parse_url(str_contains($appUrl, '://') ? $appUrl : 'https://'.$appUrl, PHP_URL_HOST) ?: '');
+
 return [
 
     /*
@@ -37,8 +47,11 @@ return [
                 'tls' => [],
             ],
             'max_request_size' => env('REVERB_MAX_REQUEST_SIZE', 10_000),
+            // On by default, not off as the framework ships it: Redis is in this stack for exactly this,
+            // and leaving it off meant development ran a single-process Reverb while the preview cluster
+            // ran the Redis-backed one — a parity gap for the one thing scaling changes.
             'scaling' => [
-                'enabled' => env('REVERB_SCALING_ENABLED', false),
+                'enabled' => env('REVERB_SCALING_ENABLED', true),
                 'channel' => env('REVERB_SCALING_CHANNEL', 'reverb'),
                 // Reverb resolves this through ConfigurationUrlParser, which merges the URL's
                 // components over the discrete keys, so a URL silently wins over any host, port,
@@ -73,20 +86,15 @@ return [
 
         'apps' => [
             [
-                'key' => env('REVERB_APP_KEY', 'starter-key'),
-                'secret' => env('REVERB_APP_SECRET', 'starter-secret'),
-                'app_id' => env('REVERB_APP_ID', 'starter'),
-                'options' => [
-                    'host' => env('REVERB_HOST', 'localhost'),
-                    'port' => env('REVERB_PORT', 8080),
-                    'scheme' => env('REVERB_SCHEME', 'http'),
-                    'useTLS' => env('REVERB_SCHEME', 'http') === 'https',
-                ],
+                // The server's half of the same handshake config/broadcasting.php configures the client
+                // for. Declared once there and read here: a default changed on one side only means every
+                // broadcast is signed for an app this server has never heard of.
+                'key' => $broadcaster['key'],
+                'secret' => $broadcaster['secret'],
+                'app_id' => $broadcaster['app_id'],
+                'options' => $broadcaster['options'],
                 // Reverb matches the Origin header's host only, so APP_URL's host is the right value.
-                'allowed_origins' => array_filter(explode(',', (string) env(
-                    'REVERB_ALLOWED_ORIGINS',
-                    parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST) ?: '*'
-                ))),
+                'allowed_origins' => array_filter(explode(',', (string) env('REVERB_ALLOWED_ORIGINS', $appHost))),
                 'ping_interval' => env('REVERB_APP_PING_INTERVAL', 60),
                 'activity_timeout' => env('REVERB_APP_ACTIVITY_TIMEOUT', 30),
                 'max_connections' => env('REVERB_APP_MAX_CONNECTIONS'),

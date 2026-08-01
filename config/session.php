@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Str;
+use Illuminate\Support\Uri;
 
 return [
 
@@ -126,7 +127,7 @@ return [
 
     'cookie' => env(
         'SESSION_COOKIE',
-        Str::slug((string) env('APP_NAME', 'laravel')).'-session',
+        Str::slug((string) config('app.name')).'-session',
     ),
 
     /*
@@ -166,7 +167,11 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // Derived from APP_URL's scheme rather than left null, which shipped the session cookie without the
+    // Secure flag on every HTTPS deployment. Keyed on the scheme and not on APP_ENV on purpose: the flag
+    // has to match how the site is actually served, and marking the cookie secure on an environment served
+    // over plain HTTP stops the browser sending it at all, so nobody can log in.
+    'secure' => env('SESSION_SECURE_COOKIE', Uri::of((string) config('app.url'))->scheme() === 'https'),
 
     /*
     |--------------------------------------------------------------------------

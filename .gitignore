@@ -2,7 +2,10 @@
 # an unignored .env is how APP_KEY and database credentials get committed.
 .env
 .env.*
-!.env.example
+# Except this one, which is committed and deliberately empty: with APP_ENV=testing Laravel looks for
+# `.env.testing` first, and phpdotenv warns on every boot when neither it nor `.env` exists. It holds no
+# values — phpunit.xml carries the test environment — so there is nothing here to leak.
+!.env.testing
 
 /.phpunit.cache
 /bootstrap/ssr
@@ -33,6 +36,5 @@ yarn-error.log
 /.playwright-cli
 /.zed
 
-**/caddy
 frankenphp
 frankenphp-worker.php

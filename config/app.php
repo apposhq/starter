@@ -1,5 +1,7 @@
 <?php
 
+use App\Providers\AppServiceProvider;
+
 return [
 
     /*
@@ -13,7 +15,10 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    // The one place this default lives. Every other identity derived from it — the OTel service name,
+    // the Reverb app id, the RUM application id, the session cookie, the cache prefix and the page title
+    // the client renders after hydration — reads config('app.name') rather than re-reading the variable.
+    'name' => env('APP_NAME', 'Starter'),
 
     /*
     |--------------------------------------------------------------------------
@@ -39,7 +44,11 @@ return [
     |
     */
 
-    'debug' => (bool) env('APP_DEBUG', true),
+    // Derived from APP_ENV so no cloud environment has to remember to set it. Laravel's own default here
+    // is true, which means an image run outside compose — where APP_ENV is production but APP_DEBUG is
+    // supplied by nothing — boots in production rendering stack traces and configuration to visitors.
+    // Setting APP_DEBUG explicitly still wins, for the rare case of debugging a deployed environment.
+    'debug' => (bool) env('APP_DEBUG', env('APP_ENV', 'local') === 'local'),
 
     /*
     |--------------------------------------------------------------------------
@@ -100,7 +109,7 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
-    'key' => env('APP_KEY', 'base64:g7J5n6MtDAj0ppG9TbzJ6eLWXcQgtPK0HufPZLo8Td0='),
+    'key' => env('APP_KEY', AppServiceProvider::DEVELOPMENT_APP_KEY),
 
     'previous_keys' => [
         ...array_filter(

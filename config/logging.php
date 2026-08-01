@@ -1,8 +1,8 @@
 <?php
 
-use Monolog\Handler\NullHandler;
+use App\Logging\FlattenExceptionsOnHandler;
+use Keepsuit\LaravelOpenTelemetry\Support\OpenTelemetryMonologHandler;
 use Monolog\Handler\StreamHandler;
-use Monolog\Handler\SyslogUdpHandler;
 use Monolog\Processor\PsrLogMessageProcessor;
 
 return [
@@ -50,48 +50,35 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Log Channels
+    |--------------------------------------------------------------------------
+    |
+    | Only the channels this application configures. Laravel merges its own logging.php underneath this
+    | one — `channels` is one of LoadConfiguration's mergeable options — so single, daily, slack, syslog,
+    | errorlog, papertrail, null and emergency all still resolve, and `deprecations` above still finds the
+    | `null` channel. Deleting them here removes this file's copy, never the channel; what it removes is
+    | eight blocks of configuration nothing in this application reads.
+    |
+    */
+
     'channels' => [
 
+        // stderr and OTLP, the same in every environment: the process writes an event stream and whatever
+        // supervises it decides where that goes — the terminal under `mise dev`, `docker logs` under
+        // compose, the collector in a deployment. No file, so there is no rotation to own and no copy that
+        // exists in only one environment.
+        //
+        // ignore_exceptions wraps the handlers in Monolog's WhatFailureGroupHandler. It matters because
+        // `otlp` is on this stack: that handler reads the authenticated user, so a log call made while the
+        // database is down re-enters the database and throws from inside the logger. Without it, that
+        // secondary exception escapes Laravel's error handler, replaces the original in the response, and
+        // the real failure is never recorded. With it, stderr still gets the line.
         'stack' => [
             'driver' => 'stack',
-            'channels' => explode(',', (string) env('LOG_STACK', 'single')),
-            'ignore_exceptions' => false,
-        ],
-
-        'single' => [
-            'driver' => 'single',
-            'path' => storage_path('logs/laravel.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
-            'replace_placeholders' => true,
-        ],
-
-        'daily' => [
-            'driver' => 'daily',
-            'path' => storage_path('logs/laravel.log'),
-            'level' => env('LOG_LEVEL', 'debug'),
-            'days' => env('LOG_DAILY_DAYS', 14),
-            'replace_placeholders' => true,
-        ],
-
-        'slack' => [
-            'driver' => 'slack',
-            'url' => env('LOG_SLACK_WEBHOOK_URL'),
-            'username' => env('LOG_SLACK_USERNAME', env('APP_NAME', 'Laravel')),
-            'emoji' => env('LOG_SLACK_EMOJI', ':boom:'),
-            'level' => env('LOG_LEVEL', 'critical'),
-            'replace_placeholders' => true,
-        ],
-
-        'papertrail' => [
-            'driver' => 'monolog',
-            'level' => env('LOG_LEVEL', 'debug'),
-            'handler' => env('LOG_PAPERTRAIL_HANDLER', SyslogUdpHandler::class),
-            'handler_with' => [
-                'host' => env('PAPERTRAIL_URL'),
-                'port' => env('PAPERTRAIL_PORT'),
-                'connectionString' => 'tls://'.env('PAPERTRAIL_URL').':'.env('PAPERTRAIL_PORT'),
-            ],
-            'processors' => [PsrLogMessageProcessor::class],
+            'channels' => explode(',', (string) env('LOG_STACK', 'stderr,otlp')),
+            'ignore_exceptions' => true,
         ],
 
         'stderr' => [
@@ -105,26 +92,17 @@ return [
             'processors' => [PsrLogMessageProcessor::class],
         ],
 
-        'syslog' => [
-            'driver' => 'syslog',
-            'level' => env('LOG_LEVEL', 'debug'),
-            'facility' => env('LOG_SYSLOG_FACILITY', LOG_USER),
-            'replace_placeholders' => true,
-        ],
-
-        'errorlog' => [
-            'driver' => 'errorlog',
-            'level' => env('LOG_LEVEL', 'debug'),
-            'replace_placeholders' => true,
-        ],
-
-        'null' => [
+        // Ships records to the collector over OTLP, stamped with the active trace and span id so a log line
+        // opens the trace it came from. The package injects this channel when it is absent, but it is
+        // spelled out here so `otlp` in LOG_STACK resolves to something a reader can find. Exports are
+        // batched, so this costs a buffer append per line rather than a request.
+        'otlp' => [
             'driver' => 'monolog',
-            'handler' => NullHandler::class,
-        ],
-
-        'emergency' => [
-            'path' => storage_path('logs/laravel.log'),
+            'handler' => OpenTelemetryMonologHandler::class,
+            'level' => env('LOG_LEVEL', 'debug'),
+            // A tap rather than `processors`: the stack builds one Logger, so a channel-level processor
+            // would rewrite records on their way to stderr too. See FlattenExceptionsOnHandler.
+            'tap' => [FlattenExceptionsOnHandler::class],
         ],
 
     ],

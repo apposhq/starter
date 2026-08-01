@@ -29,11 +29,18 @@
              connection to the SSR gateway before falling back to client rendering. -->
         <env name="INERTIA_SSR_ENABLED" value="false"/>
         <env name="DB_URL_PRIMARY" value="postgresql://postgres:postgres@localhost:5432/primary_test"/>
+        <!-- config/ defaults to the local stack, so without these the suite would mail through mailpit and
+             write objects into seaweedfs. -->
+        <env name="FILESYSTEM_DISK" value="local"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
-        <env name="PULSE_ENABLED" value="false"/>
-        <env name="TELESCOPE_ENABLED" value="false"/>
-        <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <!-- Sends every signal to a no-op exporter so no test opens an OTLP connection to OpenObserve or
+             pays an export timeout on shutdown. Deliberately not OTEL_SDK_DISABLED: PHPUnit rewrites a
+             value of "true" to "1", which the OTel SDK rejects as an invalid boolean and reads as false,
+             and Laravel's env repository is immutable so the package cannot correct it afterwards. -->
+        <env name="OTEL_LOGS_EXPORTER" value="null"/>
+        <env name="OTEL_METRICS_EXPORTER" value="null"/>
+        <env name="OTEL_TRACES_EXPORTER" value="null"/>
     </php>
 </phpunit>

@@ -1,4 +1,8 @@
 {
+  // PHP is supplied by mise and runs directly, so the extension should not go looking for Sail, Herd,
+  // Valet or a Docker wrapper to proxy commands through — "auto" picking one of those is what breaks IDE
+  // discovery. This holds inside a devbox container too, where the editor already runs beside the app.
+  "Laravel.phpEnvironment": "local",
   "editor.codeActionsOnSave": {
     "source.fixAll.oxc": "explicit"
   },

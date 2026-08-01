@@ -32,12 +32,14 @@ return [
 
         'primary' => [
             'driver' => 'pgsql',
-            'url' => env('DB_URL_PRIMARY', 'postgresql://postgres:postgres@localhost:5432/primary'),
+            // One variable, not two: ConfigurationUrlParser merges a URL's query string into the
+            // connection config, so `?sslmode=require` arrives as the `sslmode` key. A separate
+            // DB_SSLMODE_PRIMARY would be a second thing to remember to change when moving databases.
+            'url' => env('DB_URL_PRIMARY', 'postgresql://postgres:postgres@localhost:5432/primary?sslmode=prefer'),
             'charset' => 'utf8',
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE_PRIMARY', 'prefer'),
         ],
 
     ],

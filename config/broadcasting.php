@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Str;
+
 return [
 
     /*
@@ -34,7 +36,7 @@ return [
             'driver' => 'reverb',
             'key' => env('REVERB_APP_KEY', 'starter-key'),
             'secret' => env('REVERB_APP_SECRET', 'starter-secret'),
-            'app_id' => env('REVERB_APP_ID', 'starter'),
+            'app_id' => env('REVERB_APP_ID', Str::slug((string) config('app.name'))),
             'options' => [
                 'host' => env('REVERB_HOST', 'localhost'),
                 'port' => env('REVERB_PORT', 8080),

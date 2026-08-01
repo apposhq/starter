@@ -6,13 +6,23 @@ import laravel from "laravel-vite-plugin";
 import { bunny } from "laravel-vite-plugin/fonts";
 import { defineConfig } from "vite-plus";
 
-export default defineConfig(({ command }) => ({
+export default defineConfig(({ command, isSsrBuild }) => ({
   // Build only. The runtime image ships bootstrap/ssr without node_modules, so the bundle has to be
   // self-contained. In dev it would drag CJS packages like react through the ESM module runner,
   // which fails on their `module.exports` entry points.
   ssr: {
     // `false` is not an accepted value here, so dev gets an empty list instead.
     noExternal: command === "build" ? true : [],
+  },
+  build: {
+    // Without these, a production RUM error is a stack trace through minified chunk names and is not
+    // actionable. The .map files are uploaded to OpenObserve by `php artisan rum:sourcemaps` and then deleted from
+    // public/build by the same task, so they are never served to browsers.
+    //
+    // Client only: nothing consumes an SSR source map. `php artisan rum:sourcemaps` globs public/build, the Dockerfile
+    // deletes what it finds, and RUM reports browser stacks — so emitting them for the SSR build was 5 MB
+    // of work discarded on every build.
+    sourcemap: !isSsrBuild,
   },
   fmt: {
     ignorePatterns: [],

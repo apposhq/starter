@@ -1,57 +1,48 @@
 # Defined once so the credential is not repeated between openobserve and the services shipping it telemetry.
-x-oo_user: &oo_user ${ZO_ROOT_USER_EMAIL:-root@appos.sh}
-x-oo_password: &oo_password ${ZO_ROOT_USER_PASSWORD:-Openobserve1!}
+x-oo_user: &oo_user ${ZO_ROOT_USER_EMAIL:-root@example.com}
+x-oo_password: &oo_password ${ZO_ROOT_USER_PASSWORD:-Password1!}
 
-# Only settings that differ from the image or config default appear here. The internal ports are not
-# among them: the Caddyfile addresses server:8000 and reverb:8080 directly, so a PORT or REVERB_PORT
-# override would move the listener and leave the proxy pointing at nothing. PROXY_HTTP_PORT and
-# PROXY_HTTPS_PORT are the ports that can actually be changed.
 x-app_config: &app_config
   build:
     context: .
     dockerfile: ./Dockerfile
   environment:
-    APP_DEBUG: ${APP_DEBUG:-false}
-    APP_KEY: ${APP_KEY:-base64:g7J5n6MtDAj0ppG9TbzJ6eLWXcQgtPK0HufPZLo8Td0=}
-    APP_URL: ${APP_URL:-http://localhost:8000}
+    APP_ENV: ${APP_ENV:-preview}
+    # Forwarded because the seaweedfs identity file below is built from the same variables: overriding a
+    # credential or bucket on the host has to move both sides, or the app authenticates with the old one
+    # and every upload is rejected with a 403 that nothing correlates back to here.
+    AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-starter}
+    AWS_ENDPOINT: ${AWS_ENDPOINT:-http://seaweedfs:8333}
+    AWS_PRIVATE_BUCKET: ${AWS_PRIVATE_BUCKET:-starter-private}
+    AWS_PUBLIC_BUCKET: ${AWS_PUBLIC_BUCKET:-starter-public}
+    AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-starter}
     DB_URL_PRIMARY: ${DB_URL_PRIMARY:-postgresql://postgres:postgres@postgres:5432/primary}
-    GIT_ROOT: ${GIT_ROOT:-/data/repos}
+    MAIL_URL: ${MAIL_URL:-smtp://mailpit:1025}
     OO_OTLP_ENDPOINT: ${OO_OTLP_ENDPOINT:-http://openobserve:5080/api/default}
     OO_PASSWORD: *oo_password
     OO_USER: *oo_user
-    # Redis pub/sub fans broadcasts across reverb replicas.
     REDIS_URL: ${REDIS_URL:-redis://redis:6379}
     REVERB_HOST: ${REVERB_HOST:-reverb}
-    REVERB_SCALING_ENABLED: ${REVERB_SCALING_ENABLED:-true}
-  # The server and worker share the repos volume; git's lockfiles make concurrent access safe.
-  volumes:
-    - repos:/data/repos
   profiles:
     - app
   restart: unless-stopped
-  # Let in-flight requests and jobs finish on SIGTERM before the SIGKILL. With >=2 replicas, this is
-  # what makes the rolling swap lossless.
   stop_grace_period: 30s
 
 configs:
-  caddyfile:
+  seaweedfs_s3:
     content: |
-      {$$CADDY_SITE_ADDRESS} {
-      	handle /app/* {
-      		reverse_proxy {
-      			dynamic a reverb 8080
-      		}
-      	}
-      	handle /apps/* {
-      		reverse_proxy {
-      			dynamic a reverb 8080
-      		}
-      	}
-      	handle {
-      		reverse_proxy {
-      			dynamic a server 8000
-      		}
-      	}
+      {
+        "identities": [
+          {
+            "name": "app",
+            "credentials": [{ "accessKey": "${AWS_ACCESS_KEY_ID:-starter}", "secretKey": "${AWS_SECRET_ACCESS_KEY:-starter}" }],
+            "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+          },
+          {
+            "name": "anonymous",
+            "actions": ["Read:${AWS_PUBLIC_BUCKET:-starter-public}"]
+          }
+        ]
       }
 
   postgres_initdb:
@@ -69,16 +60,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      # Every database the application connects to, comma separated. This is the only place they are
-      # declared: the init script below creates each one alongside a `<name>_test` companion, because
-      # the suite's RefreshDatabase drops every table and must not do that to development data.
-      # POSTGRES_DB is deliberately unset so this list stays the single source.
       POSTGRES_DATABASES: ${POSTGRES_DATABASES:-primary}
-      # The pgdata volume below is only the data directory if PGDATA points at it. Without this the
-      # image keeps its own default (/var/lib/postgresql/19/docker, which carries the major version),
-      # the declared volume stays empty, and the cluster lands in the anonymous volume Docker creates
-      # for the image's VOLUME /var/lib/postgresql. That still persists, but under a name nothing
-      # references, so the declaration below reads as persistence that is not happening.
       PGDATA: /home/postgres/pgdata
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d postgres"]
@@ -86,19 +68,13 @@ services:
       timeout: 30s
       retries: 5
       start_period: 30s
-    deploy:
-      resources:
-        limits:
-          memory: ${POSTGRES_MEMORY:-1G}
     ports:
-      - ${INFRA_BIND:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432
+      - 127.0.0.1:${POSTGRES_PORT:-5432}:5432
     profiles:
       - infra
     configs:
       - source: postgres_initdb
         target: /docker-entrypoint-initdb.d/create-databases.sql
-    volumes:
-      - pgdata:/home/postgres/pgdata
     restart: unless-stopped
 
   # Reverb pub/sub. Uses clue/redis-react, so the app image needs no ext-redis.
@@ -110,22 +86,16 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-    deploy:
-      resources:
-        limits:
-          memory: ${REDIS_MEMORY:-256M}
     ports:
-      - ${INFRA_BIND:-127.0.0.1}:${REDIS_PORT:-6379}:6379
+      - 127.0.0.1:${REDIS_PORT:-6379}:6379
     profiles:
       - infra
-    volumes:
-      - redisdata:/data
     restart: unless-stopped
 
   # Observability (logs, metrics, traces, RUM, session replay) for the primary and its apps; backs
-  # the per-app dashboards and the @appos/o11y primitive. Single binary, ~140x cheaper than ELK/Datadog.
+  # the per-app dashboards. Single binary, ~140x cheaper than ELK/Datadog.
   openobserve:
-    image: openobserve/openobserve:${OPENOBSERVE_VERSION:-v0.91.2}
+    image: openobserve/openobserve:${OPENOBSERVE_VERSION:-v0.91.5}
     environment:
       ZO_ROOT_USER_EMAIL: *oo_user
       ZO_ROOT_USER_PASSWORD: *oo_password
@@ -133,44 +103,54 @@ services:
       # Browser RUM posts cross-origin, so its origin must be allow-listed. Defaults cover local dev
       # and preview; add production domains.
       ZO_CORS_ALLOWED_ORIGINS: ${ZO_CORS_ALLOWED_ORIGINS:-http://localhost:8000,https://localhost}
+    # No healthcheck: the image is distroless, with no curl, wget or shell to run one with, so any CMD
+    # here reports unhealthy forever and `up --wait` never returns. `mise up` polls /healthz from the host
+    # instead, which is what the app's boot-time RUM token fetch needs to have happened.
     ports:
-      - ${INFRA_BIND:-127.0.0.1}:${OPENOBSERVE_PORT:-5080}:5080
+      - 127.0.0.1:${OPENOBSERVE_PORT:-5080}:5080
     profiles:
       - infra
-    volumes:
-      - o2data:/data
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:${MAILPIT_VERSION:-v1.30.6}
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    ports:
+      - 1025:1025
+      - 8025:8025
+    profiles:
+      - infra
+    restart: unless-stopped
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:${SEAWEEDFS_VERSION:-4.40}
+    command: server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json -filer -master.volumeSizeLimitMB=1024
+    configs:
+      - source: seaweedfs_s3
+        target: /etc/seaweedfs/s3.json
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8333/status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    ports:
+      - 8333:8333
+      - 8888:8888
+    profiles:
+      - infra
     restart: unless-stopped
 
   server:
     <<: *app_config
-    deploy:
-      resources:
-        limits:
-          memory: ${SERVER_MEMORY:-1G}
-
-  # Single entrypoint so server and reverb can both scale; caddy re-resolves replicas via dynamic a.
-  proxy:
-    image: caddy:${CADDY_VERSION:-2.11.4-alpine}
-    configs:
-      - source: caddyfile
-        target: /etc/caddy/Caddyfile
-    deploy:
-      resources:
-        limits:
-          memory: ${PROXY_MEMORY:-256M}
-    environment:
-      CADDY_SITE_ADDRESS: ${CADDY_SITE_ADDRESS:-:80}
     ports:
-      - ${PROXY_HTTP_PORT:-8000}:80
-      - ${PROXY_HTTPS_PORT:-8443}:443
-    profiles:
-      - app
-    restart: unless-stopped
-    # Persist issued certificates; without this prod re-requests on every restart and hits ACME limits.
-    volumes:
-      - caddydata:/data
+      - 8000:8000
 
-  # Separate from `server` so websocket and http load scale independently.
   reverb:
     <<: *app_config
     healthcheck:
@@ -179,27 +159,12 @@ services:
       timeout: 5s
       start_period: 15s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          memory: ${REVERB_MEMORY:-512M}
-    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    ports:
+      - 8080:8080
+    command: ["php", "artisan", "reverb:start"]
 
-  # Recycle limits cap memory growth in the long-lived worker.
   worker:
-    deploy:
-      resources:
-        limits:
-          memory: ${WORKER_MEMORY:-256M}
     <<: *app_config
-    # Shares the image but serves no HTTP, so the image healthcheck cannot apply.
     healthcheck:
       disable: true
     command: ["php", "artisan", "queue:work", "--tries=3", "--max-jobs=1000", "--max-time=3600"]
-
-volumes:
-  caddydata:
-  pgdata:
-  o2data:
-  redisdata:
-  repos:

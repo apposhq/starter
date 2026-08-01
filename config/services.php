@@ -8,25 +8,17 @@ return [
     |--------------------------------------------------------------------------
     |
     | This file is for storing the credentials for third party services such
-    | as Resend, Postmark, AWS, and more. This file provides the de facto
-    | location for this type of information, allowing packages to have
-    | a conventional file to locate the various service credentials.
+    | as AWS, Slack, and more. This file provides the de facto location for
+    | this type of information, allowing packages to have a conventional
+    | file to locate the various service credentials.
+    |
+    | Mail goes out over SMTP configured by MAIL_URL, so this file declares no
+    | mail-provider credentials. Note they still resolve at runtime: Laravel
+    | merges its own services.php underneath this one, so config('services')
+    | keeps postmark, resend and ses with the framework's env names. Deleting a
+    | block here removes only this file's copy, never the key.
     |
     */
-
-    'postmark' => [
-        'key' => env('POSTMARK_API_KEY'),
-    ],
-
-    'resend' => [
-        'key' => env('RESEND_API_KEY'),
-    ],
-
-    'ses' => [
-        'key' => env('AWS_ACCESS_KEY_ID'),
-        'secret' => env('AWS_SECRET_ACCESS_KEY'),
-        'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
-    ],
 
     'slack' => [
         'notifications' => [

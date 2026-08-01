@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Uri;
+
 return [
 
     /*
@@ -14,7 +16,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    'default' => env('MAIL_MAILER', 'smtp'),
 
     /*
     |--------------------------------------------------------------------------
@@ -29,9 +31,16 @@ return [
     | when delivering an email. You may specify which one you're using for
     | your mailers below. You may also add additional mailers if needed.
     |
-    | Supported: "smtp", "sendmail", "mailgun", "ses", "ses-v2",
-    |            "postmark", "resend", "log", "array",
-    |            "failover", "roundrobin"
+    | Laravel supports smtp, sendmail, mailgun, ses, ses-v2, postmark, resend,
+    | log, array, failover and roundrobin. Only the ones this application
+    | actually delivers through are defined below; the API transports were
+    | removed rather than left configured-but-unused.
+    |
+    | Delivery is SMTP configured by a single MAIL_URL, e.g.
+    | smtp://user:pass@host:587. Use the "smtp" scheme even for implicit TLS:
+    | the URL scheme becomes the transport name and there is no "smtps"
+    | transport, so smtps:// throws. Port 465 selects implicit TLS on its own,
+    | or set MAIL_SCHEME=smtps explicitly.
     |
     */
 
@@ -40,34 +49,21 @@ return [
         'smtp' => [
             'transport' => 'smtp',
             'scheme' => env('MAIL_SCHEME'),
-            'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST', '127.0.0.1'),
-            'port' => env('MAIL_PORT', 2525),
+            // The local default lives on the discrete keys, not on `url`. MailManager merges a URL over
+            // host/port/username/password whenever one is set, so defaulting `url` would permanently
+            // disable the discrete path — a deployment configured the documented Laravel way, with
+            // MAIL_HOST and MAIL_USERNAME and no MAIL_URL, would silently keep talking to mailpit.
+            //
+            // Coalesced to null because compose turns an unset variable into an empty string, and
+            // MailManager gates on isset() — which an empty string passes, sending it down the
+            // URL-parsing path to fail with "Unsupported mail transport []".
+            'url' => env('MAIL_URL') ?: null,
+            'host' => env('MAIL_HOST', 'localhost'),
+            'port' => env('MAIL_PORT', 1025),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
             'timeout' => null,
-            'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost:8000'), PHP_URL_HOST)),
-        ],
-
-        'ses' => [
-            'transport' => 'ses',
-        ],
-
-        'postmark' => [
-            'transport' => 'postmark',
-            // 'message_stream_id' => env('POSTMARK_MESSAGE_STREAM_ID'),
-            // 'client' => [
-            //     'timeout' => 5,
-            // ],
-        ],
-
-        'resend' => [
-            'transport' => 'resend',
-        ],
-
-        'sendmail' => [
-            'transport' => 'sendmail',
-            'path' => env('MAIL_SENDMAIL_PATH', '/usr/sbin/sendmail -bs -i'),
+            'local_domain' => env('MAIL_EHLO_DOMAIN', Uri::of((string) config('app.url'))->host()),
         ],
 
         'log' => [
@@ -88,14 +84,9 @@ return [
             'retry_after' => 60,
         ],
 
-        'roundrobin' => [
-            'transport' => 'roundrobin',
-            'mailers' => [
-                'ses',
-                'postmark',
-            ],
-            'retry_after' => 60,
-        ],
+        // No roundrobin mailer: it existed to spread load across two API transports that are now gone,
+        // and rotating between one mailer is not a strategy. `failover` above is the one that still
+        // earns its place, dropping to the log channel when SMTP is unreachable.
 
     ],
 
@@ -112,7 +103,7 @@ return [
 
     'from' => [
         'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
+        'name' => env('MAIL_FROM_NAME', config('app.name')),
     ],
 
 ];

@@ -1,6 +1,5 @@
 [env]
 _.path = ["./node_modules/.bin", "./vendor/bin"]
-APP_URL = "http://localhost:{{ env.PORT | default(value='8000') }}"
 FORCE_COLOR = "1"
 NODE_OPTIONS = "--no-warnings"
 PHP_EXTRA_CONFIGURE_OPTIONS = "{% if os() == 'macos' %}--with-pdo-pgsql=/opt/homebrew/opt/libpq --with-pgsql=/opt/homebrew/opt/libpq{% else %}--with-pdo-pgsql --with-pgsql --without-sqlite3 --without-pdo-sqlite --disable-gd{% endif %}"
@@ -44,7 +43,6 @@ cloudflared = "2026.7.3"
 node = "26.5.0"
 oha = "1.15.0"
 php = "8.5.0"
-watchexec = "2.5.1"
 
 [tasks.cc]
 description = "Run Claude Code with permission prompts skipped"
@@ -93,49 +91,13 @@ run = "phpstan analyse --memory-limit=1G"
 description = "Clean the project"
 run = "rm -rf .playwright* frankenphp node_modules vendor"
 
-[tasks.rum_token]
-description = "Fetch the current RUM token from OpenObserve and print it to stdout"
-run = 'curl -s -u "${ZO_ROOT_USER_EMAIL:-root@appos.sh}:${ZO_ROOT_USER_PASSWORD:-Openobserve1!}" http://localhost:5080/api/default/rumtoken | jq -r ".data.rum_token // empty"'
-
 [tasks.dev]
-description = "Start the development environment (server and worker)"
+description = "Start the development environment"
 depends = ["up"]
-depends_post = ["dev:*"]
-# optimize:clear runs every time on purpose. A stale bootstrap/cache/config.php silently ignores .env
-# and is the classic "why is my change not taking effect" day-long debug; dev should never inherit it.
 run = """
-mkdir -p tmp && : > tmp/dev.log
 php artisan optimize:clear
+php artisan dev
 """
-
-[tasks."dev:server"]
-hide = true
-run = "php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=${PORT:-8000} 2>&1 | tee -a tmp/dev.log"
-
-# Octane's own --watch is hardcoded to chokidar (vendor/laravel/octane/bin/file-watcher.cjs), so the
-# reload is driven by watchexec instead. octane:reload restarts the workers without dropping the
-# listening socket, so the browser never races a restart. Vite HMR is untouched.
-[tasks."dev:watch"]
-hide = true
-run = """
-watchexec --postpone \
-  --watch app --watch bootstrap --watch config --watch database --watch resources \
-  --watch routes --watch composer.lock \
-  --filter '*.php' --filter 'composer.lock' \
-  -- php artisan octane:reload 2>&1 | tee -a tmp/dev.log
-"""
-
-[tasks."dev:reverb"]
-hide = true
-run = "php artisan reverb:start --host=0.0.0.0 --port=${REVERB_SERVER_PORT:-8080} 2>&1 | tee -a tmp/dev.log"
-
-[tasks."dev:vite"]
-hide = true
-run = "vp dev 2>&1 | tee -a tmp/dev.log"
-
-[tasks."dev:worker"]
-hide = true
-run = "php artisan queue:listen --tries=1 --timeout=0 2>&1 | tee -a tmp/dev.log"
 
 [tasks.down]
 description = "Stop and remove local infra containers, orphans, and volumes"
@@ -146,6 +108,14 @@ description = "Start local infra containers"
 run = """
 if [ "$(docker compose --profile=infra ps --services --status running | sort)" != "$(docker compose --profile=infra config --services | sort)" ]; then
   docker compose --profile=infra up -d --wait
+  # openobserve ships no healthcheck (distroless image - nothing to probe with), so --wait does not
+  # gate on it. The app asks it for the RUM client token at boot, and losing that race turns browser
+  # telemetry off for the whole session with only a log line to show for it.
+  until curl -sf http://localhost:${OPENOBSERVE_PORT:-5080}/healthz >/dev/null 2>&1; do sleep 0.5; done
+  # public/storage is gitignored and so absent from a fresh clone. --force because it outlives
+  # `mise down`, which takes the containers and volumes but never touches the working copy.
+  php artisan storage:link --force
+  php artisan storage:bucket
   php artisan migrate --force
   php artisan db:seed --force
 fi
@@ -156,8 +126,5 @@ description = "Preview the production build in the Docker Compose cluster"
 depends = ["up"]
 run = """
 trap 'docker compose --profile=app down --remove-orphans --timeout=0 --volumes' EXIT
-OO_RUM_CLIENT_TOKEN=$(mise rum_token) docker compose --profile=app up --build \
-  --scale server=${SERVER_REPLICAS:-1} \
-  --scale reverb=${REVERB_REPLICAS:-1} \
-  --scale worker=${WORKER_REPLICAS:-1}
+docker compose --profile=app up --build
 """

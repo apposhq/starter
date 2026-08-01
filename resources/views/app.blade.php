@@ -36,10 +36,16 @@
 
         @fonts
 
+        {{-- Read by resources/js/rum.ts. A JSON block rather than an inline assignment so nothing here
+             executes, and absent entirely when RUM is off, which is what switches the SDK off. --}}
+        @isset($rum)
+            <script type="application/json" id="rum-config">@json($rum)</script>
+        @endisset
+
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         <x-inertia::head>
-            <title>{{ config('app.name', 'Laravel') }}</title>
+            <title>{{ config('app.name') }}</title>
         </x-inertia::head>
     </head>
     <body class="font-sans antialiased">
