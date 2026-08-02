@@ -1,0 +1,590 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Starter",
+    "version": "0.0.1"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8000/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "http": []
+    }
+  ],
+  "paths": {
+    "/members": {
+      "get": {
+        "operationId": "v1.members.index",
+        "description": "Members of the team the API key belongs to, oldest first.\n\nPaged by cursor rather than page number. Offset paging re-runs the query for every page, so a\nmember joining or leaving mid-walk shifts every row after it \u2014 the caller silently skips or\nrepeats records. A cursor names the row it left off at, which stays correct while the table\nchanges underneath, and costs a key lookup instead of a scan on deep pages.\n\nPass the `next_cursor` from the previous response as `cursor` to continue.",
+        "summary": "List members",
+        "tags": ["Members", "Member"],
+        "responses": {
+          "200": {
+            "description": "Paginated set of `MemberResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MemberResource"
+                      }
+                    },
+                    "links": {
+                      "type": "object",
+                      "properties": {
+                        "first": {
+                          "type": ["string", "null"]
+                        },
+                        "last": {
+                          "type": ["string", "null"]
+                        },
+                        "prev": {
+                          "type": ["string", "null"]
+                        },
+                        "next": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["first", "last", "prev", "next"]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "path": {
+                          "type": ["string", "null"],
+                          "description": "Base path for paginator generated URLs."
+                        },
+                        "per_page": {
+                          "type": "integer",
+                          "description": "Number of items shown per page.",
+                          "minimum": 0
+                        },
+                        "next_cursor": {
+                          "type": ["string", "null"],
+                          "description": "The \"cursor\" that points to the next set of items."
+                        },
+                        "prev_cursor": {
+                          "type": ["string", "null"],
+                          "description": "The \"cursor\" that points to the previous set of items."
+                        }
+                      },
+                      "required": ["path", "per_page", "next_cursor", "prev_cursor"]
+                    }
+                  },
+                  "required": ["data", "links", "meta"]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      }
+    },
+    "/members/{member}": {
+      "get": {
+        "operationId": "v1.members.show",
+        "description": "Responds 404 rather than 403 when the member belongs to another team, so the API never confirms\nthat an id it cannot show exists.",
+        "summary": "Retrieve a member",
+        "tags": ["Members", "Member"],
+        "parameters": [
+          {
+            "name": "member",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`MemberResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/MemberResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundHttpException"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      }
+    },
+    "/team": {
+      "get": {
+        "operationId": "v1.team.show",
+        "description": "Returns the team the API key belongs to. A key is issued by a team and acts only on that team, so\nthere is no team id to pass and no way to reach another customer's data with it.",
+        "summary": "Retrieve the team",
+        "tags": ["Team"],
+        "responses": {
+          "200": {
+            "description": "`TeamResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/TeamResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      }
+    },
+    "/webhook-endpoints": {
+      "get": {
+        "operationId": "v1.webhook-endpoints.index",
+        "summary": "List webhook endpoints",
+        "tags": ["Webhook endpoints", "WebhookEndpoint"],
+        "responses": {
+          "200": {
+            "description": "Paginated set of `WebhookEndpointResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WebhookEndpointResource"
+                      }
+                    },
+                    "links": {
+                      "type": "object",
+                      "properties": {
+                        "first": {
+                          "type": ["string", "null"]
+                        },
+                        "last": {
+                          "type": ["string", "null"]
+                        },
+                        "prev": {
+                          "type": ["string", "null"]
+                        },
+                        "next": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["first", "last", "prev", "next"]
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "path": {
+                          "type": ["string", "null"],
+                          "description": "Base path for paginator generated URLs."
+                        },
+                        "per_page": {
+                          "type": "integer",
+                          "description": "Number of items shown per page.",
+                          "minimum": 0
+                        },
+                        "next_cursor": {
+                          "type": ["string", "null"],
+                          "description": "The \"cursor\" that points to the next set of items."
+                        },
+                        "prev_cursor": {
+                          "type": ["string", "null"],
+                          "description": "The \"cursor\" that points to the previous set of items."
+                        }
+                      },
+                      "required": ["path", "per_page", "next_cursor", "prev_cursor"]
+                    }
+                  },
+                  "required": ["data", "links", "meta"]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      },
+      "post": {
+        "operationId": "v1.webhook-endpoints.store",
+        "description": "The signing secret is in the response and is not retrievable afterwards. Send this request with an\n`Idempotency-Key` so a retry after a timeout does not register the endpoint twice.",
+        "summary": "Create a webhook endpoint",
+        "tags": ["Webhook endpoints", "WebhookEndpoint"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "https only, and pointed outside our own network: this is the one URL a customer chooses\nthat our servers then request, which makes it an SSRF primitive without the second check.\nA delivery is signed but not encrypted, and the payload describes the customer's own data.",
+                    "maxLength": 2000
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "maxLength": 255
+                  },
+                  "events": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "minItems": 1
+                  }
+                },
+                "required": ["url", "events"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`WebhookEndpointResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/WebhookEndpointResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      }
+    },
+    "/webhook-endpoints/{endpoint}": {
+      "get": {
+        "operationId": "v1.webhook-endpoints.show",
+        "summary": "Retrieve a webhook endpoint",
+        "tags": ["Webhook endpoints", "WebhookEndpoint"],
+        "parameters": [
+          {
+            "name": "endpoint",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "`WebhookEndpointResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/WebhookEndpointResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      },
+      "put": {
+        "operationId": "v1.webhook-endpoints.update",
+        "summary": "Update a webhook endpoint",
+        "tags": ["Webhook endpoints", "WebhookEndpoint"],
+        "parameters": [
+          {
+            "name": "endpoint",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "https only, and pointed outside our own network: this is the one URL a customer chooses\nthat our servers then request, which makes it an SSRF primitive without the second check.\nA delivery is signed but not encrypted, and the payload describes the customer's own data.",
+                    "maxLength": 2000
+                  },
+                  "description": {
+                    "type": ["string", "null"],
+                    "maxLength": 255
+                  },
+                  "events": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "minItems": 1
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`WebhookEndpointResource`",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/WebhookEndpointResource"
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationException"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "v1.webhook-endpoints.destroy",
+        "description": "Deliveries already recorded go with it.",
+        "summary": "Delete a webhook endpoint",
+        "tags": ["Webhook endpoints", "WebhookEndpoint"],
+        "parameters": [
+          {
+            "name": "endpoint",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No content"
+          },
+          "401": {
+            "$ref": "#/components/responses/AuthenticationException"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "http": {
+        "type": "http",
+        "description": "A team API key, sent as `Authorization: Bearer sk_live_\u2026`. Keys are issued per team and act only on that team.",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "MemberResource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The member's stable identifier."
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "description": "The member's role in this team: owner, admin or member."
+          },
+          "joined_at": {
+            "type": ["string", "null"],
+            "description": "When the member joined this team."
+          }
+        },
+        "required": ["id", "name", "email"],
+        "title": "MemberResource"
+      },
+      "TeamResource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The team's stable identifier."
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name."
+          },
+          "slug": {
+            "type": "string",
+            "description": "URL-safe identifier, unique across the platform."
+          },
+          "personal": {
+            "type": "boolean",
+            "description": "Whether this is the owner's personal team, which cannot be deleted or left."
+          },
+          "created_at": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["id", "name", "slug", "personal", "created_at"],
+        "title": "TeamResource"
+      },
+      "WebhookEndpointResource": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The endpoint's stable identifier."
+          },
+          "url": {
+            "type": "string",
+            "description": "Where deliveries are POSTed."
+          },
+          "description": {
+            "type": ["string", "null"]
+          },
+          "events": {
+            "type": "array",
+            "description": "Event types this endpoint receives. `*` means every type, including ones added later.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "active": {
+            "type": "boolean",
+            "description": "Whether deliveries are currently being sent."
+          },
+          "secret": {
+            "type": "string",
+            "description": "The signing secret. Returned only when the endpoint is created \u2014 it is not recoverable\nafterwards, and every delivery is signed with it."
+          },
+          "created_at": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": ["id", "url", "description", "events", "active", "created_at"],
+        "title": "WebhookEndpointResource"
+      }
+    },
+    "responses": {
+      "AuthenticationException": {
+        "description": "Unauthenticated",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Error overview."
+                }
+              },
+              "required": ["message"]
+            }
+          }
+        }
+      },
+      "NotFoundHttpException": {
+        "description": "Not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Error overview."
+                }
+              },
+              "required": ["message"]
+            }
+          }
+        }
+      },
+      "ValidationException": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "description": "Errors overview."
+                },
+                "errors": {
+                  "type": "object",
+                  "description": "A detailed description of each field that failed validation.",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "required": ["message", "errors"]
+            }
+          }
+        }
+      }
+    }
+  }
+}

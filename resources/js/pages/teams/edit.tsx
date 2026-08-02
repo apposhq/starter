@@ -1,5 +1,5 @@
-import { Form, Head, router } from "@inertiajs/react";
-import { ChevronDown, Mail, UserPlus, X } from "lucide-react";
+import { Form, Head, Link, router } from "@inertiajs/react";
+import { ChevronDown, KeyRound, Mail, UserPlus, Webhook, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import CancelInvitationModal from "#/components/cancel-invitation-modal.tsx";
@@ -26,8 +26,10 @@ import {
   TooltipTrigger,
 } from "#/components/ui/tooltip.tsx";
 import { useInitials } from "#/hooks/use-initials.tsx";
+import { index as apiKeys } from "#/routes/api-keys/index.ts";
 import { edit, index, update } from "#/routes/teams/index.ts";
 import { update as updateMember } from "#/routes/teams/members/index.ts";
+import { index as webhooks } from "#/routes/webhooks/index.ts";
 import type {
   RoleOption,
   Team,
@@ -287,6 +289,47 @@ export default function TeamEdit({
               >
                 Delete team
               </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {permissions.canManageApiKeys || permissions.canManageWebhooks ? (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-base font-medium">Developers</h3>
+              <p className="text-muted-foreground text-sm">How other software talks to this team</p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {permissions.canManageApiKeys ? (
+                <Link
+                  href={apiKeys(team.slug)}
+                  className="hover:bg-accent flex items-start gap-3 rounded-lg border p-4 transition-colors"
+                >
+                  <KeyRound className="text-muted-foreground mt-0.5 size-5 shrink-0" />
+                  <span>
+                    <span className="block font-medium">API keys</span>
+                    <span className="text-muted-foreground block text-sm">
+                      Let software act on this team
+                    </span>
+                  </span>
+                </Link>
+              ) : null}
+
+              {permissions.canManageWebhooks ? (
+                <Link
+                  href={webhooks(team.slug)}
+                  className="hover:bg-accent flex items-start gap-3 rounded-lg border p-4 transition-colors"
+                >
+                  <Webhook className="text-muted-foreground mt-0.5 size-5 shrink-0" />
+                  <span>
+                    <span className="block font-medium">Webhooks</span>
+                    <span className="text-muted-foreground block text-sm">
+                      Get told when something happens
+                    </span>
+                  </span>
+                </Link>
+              ) : null}
             </div>
           </div>
         ) : null}

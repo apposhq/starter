@@ -10,6 +10,7 @@
   "license": "MIT",
   "require": {
     "php": "^8.5",
+    "dedoc/scramble": "^0.13.36",
     "inertiajs/inertia-laravel": "^3.2.1",
     "keepsuit/laravel-opentelemetry": "^2.2",
     "laravel/chisel": "^0.1.0",
@@ -17,6 +18,7 @@
     "laravel/framework": "^13.17",
     "laravel/octane": "^2.18",
     "laravel/reverb": "^1.11",
+    "laravel/sanctum": "^4.0",
     "laravel/tinker": "^3.0",
     "laravel/wayfinder": "^0.1.14",
     "league/flysystem-aws-s3-v3": "^3.35"

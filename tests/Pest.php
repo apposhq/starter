@@ -1,6 +1,14 @@
 <?php
 
+use App\Enums\ApiKeyMode;
+use App\Enums\TeamRole;
+use App\Models\ApiKey;
+use App\Models\Team;
+use App\Models\User;
+use App\Models\WebhookDelivery;
+use App\Models\WebhookEndpoint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /*
@@ -44,7 +52,74 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Mint a real API key for a team and hand back the model with its plaintext secret.
+ *
+ * Goes through the same minting the controller uses rather than a factory, so tests authenticate with a
+ * secret the application would actually have issued — a fixture with a hand-written token would pass
+ * even if minting and lookup disagreed.
+ *
+ * @param  array<string, mixed>  $attributes
+ * @return array{0: ApiKey, 1: string}
+ */
+function apiKeyFor(Team $team, array $attributes = []): array
 {
-    // ..
+    $mode = $attributes['mode'] ?? ApiKeyMode::Live;
+
+    [$secret, $hint] = ApiKey::mintSecret($mode);
+
+    $key = $team->apiKeys()->create([
+        'name' => 'Test key',
+        'token' => hash('sha256', $secret),
+        'abilities' => ['*'],
+        'mode' => $mode,
+        'last_four' => $hint,
+        ...$attributes,
+    ]);
+
+    return [$key, $secret];
+}
+
+/**
+ * A team with one owner, which is the shape every API request assumes.
+ *
+ * @return array{0: Team, 1: User}
+ */
+function teamWithOwner(): array
+{
+    $owner = User::factory()->create();
+    $team = Team::factory()->create();
+
+    $team->members()->attach($owner, ['role' => TeamRole::Owner->value]);
+
+    return [$team, $owner];
+}
+
+/**
+ * A webhook endpoint for a team, with a real signing secret.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function endpointFor(Team $team, array $attributes = []): WebhookEndpoint
+{
+    return $team->webhooks()->create([
+        'url' => 'https://8.8.8.8/hooks',
+        'events' => [WebhookEndpoint::ALL_EVENTS],
+        'secret' => WebhookEndpoint::mintSecret(),
+        ...$attributes,
+    ]);
+}
+
+/**
+ * A queued delivery, shaped the way Webhooks::send would leave it.
+ */
+function deliveryFor(WebhookEndpoint $endpoint, string $type = 'member.added'): WebhookDelivery
+{
+    $eventId = (string) Str::ulid();
+
+    return $endpoint->deliveries()->create([
+        'event_id' => $eventId,
+        'event_type' => $type,
+        'payload' => ['id' => $eventId, 'type' => $type, 'created_at' => now()->toIso8601String(), 'data' => []],
+    ]);
 }

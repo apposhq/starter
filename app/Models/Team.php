@@ -5,14 +5,18 @@ namespace App\Models;
 use App\Concerns\GeneratesUniqueTeamSlugs;
 use App\Enums\TeamRole;
 use Database\Factories\TeamFactory;
+use Illuminate\Auth\Authenticatable;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Laravel\Sanctum\HasApiTokens;
 
 /**
  * @property int $id
@@ -27,8 +31,17 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, User> $members
  */
 #[Fillable(['name', 'slug', 'is_personal'])]
-class Team extends Model
+class Team extends Model implements AuthenticatableContract
 {
+    /**
+     * A team is the authenticated principal for API requests: keys are issued by a team and act on that
+     * team, so the team outlives whoever created the key. Sanctum requires HasApiTokens on a tokenable,
+     * and Laravel's guard contract — plus anything typed against it, like the OpenTelemetry package's
+     * user context — requires Authenticatable. A team never signs in, so the password and remember-token
+     * halves of that contract are inert.
+     */
+    use Authenticatable, HasApiTokens;
+
     /** @use HasFactory<TeamFactory> */
     use GeneratesUniqueTeamSlugs, HasFactory, SoftDeletes;
 
@@ -83,6 +96,29 @@ class Team extends Model
     public function memberships(): HasMany
     {
         return $this->hasMany(Membership::class);
+    }
+
+    /**
+     * Where this team wants to be notified when something happens.
+     *
+     * @return HasMany<WebhookEndpoint, $this>
+     */
+    public function webhooks(): HasMany
+    {
+        return $this->hasMany(WebhookEndpoint::class);
+    }
+
+    /**
+     * The API keys this team has issued.
+     *
+     * Owned by the team rather than by whoever created them, so a member leaving cannot take a
+     * customer's integration down with them. See {@see ApiKey}.
+     *
+     * @return MorphMany<ApiKey, $this>
+     */
+    public function apiKeys(): MorphMany
+    {
+        return $this->morphMany(ApiKey::class, 'tokenable');
     }
 
     /**

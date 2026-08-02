@@ -71,11 +71,11 @@ Check permissions rather than roles:
 $user->hasTeamPermission($team, TeamPermission::RemoveMember);
 ```
 
-| Role   | Permissions                                             |
-| ------ | ------------------------------------------------------- |
-| Owner  | all seven                                               |
-| Admin  | `team:update`, `invitation:create`, `invitation:cancel` |
-| Member | none                                                    |
+| Role   | Permissions                                                                                 |
+| ------ | ------------------------------------------------------------------------------------------- |
+| Owner  | all nine                                                                                    |
+| Admin  | `team:update`, `invitation:create`, `invitation:cancel`, `api_key:manage`, `webhook:manage` |
+| Member | none                                                                                        |
 
 New permission: add a `TeamPermission` case, map it in `TeamRole::permissions()`. The frontend
 receives the resolved set as `TeamPermissions`, so buttons hide themselves.
@@ -92,6 +92,69 @@ Also on `User`: `belongsToTeam`, `ownsTeam`, `teamRole`, `switchTeam`, `personal
   replay all land in OpenObserve
 
 Source maps upload separately so they never ship to browsers: `mise build && php artisan rum:sourcemaps`.
+
+## Public API
+
+`routes/api.php` is versioned by prefix. Everything under it is authenticated by an API key and scoped to
+the team that key belongs to, so a controller never filters by team itself.
+
+|                    |                                                |
+| ------------------ | ---------------------------------------------- |
+| `/api/v1`          | The API                                        |
+| `/docs/v1`         | Browsable reference                            |
+| `/openapi/v1.json` | The spec, as a static file customers can fetch |
+
+The spec is inferred from controllers and resources by Scramble — there are no annotations to keep in
+step. `mise check` regenerates it and fails if the committed copy no longer matches the code, so the
+published contract cannot drift from what the API actually returns. After changing a response shape:
+
+```bash
+php artisan scramble:export --api=v1 --path=public/openapi/v1.json
+```
+
+Keys are owned by the team, not the member who created it, so an integration survives that person
+leaving; `created_by` keeps the audit trail. Secrets are shown once, stored only as a SHA-256 hash, and
+carry a `sk_live_`/`sk_test_` prefix and a checksum so a leaked key is identifiable by a secret scanner.
+Revocation is a timestamp rather than a delete — a key still being sent after rotation shows up in
+`last_used_at` instead of vanishing. Errors are RFC 9457 problem details, and every one carries the
+`trace_id` of the request that produced it.
+
+What every endpoint gets from the middleware stack, without asking:
+
+|               |                                                                                                                                                                                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rate limiting | Per key, not per address. `X-RateLimit-*` on every response, `Retry-After` on a 429. Live and test keys have separate budgets — `config/api.php`                                    |
+| Pagination    | Cursor, not offset, so a list stays correct while rows are inserted underneath it. An unreadable cursor is a 400 rather than a silent restart                                       |
+| Idempotency   | Send `Idempotency-Key` on a POST, PUT or PATCH and a retry replays the first answer instead of acting twice. 422 if reused for a different request, 409 while the first is still running, 400 if sent on a method that is already repeatable |
+
+Idempotency follows `draft-ietf-httpapi-idempotency-key-header`. Records are kept 24 hours and swept
+hourly. A 5xx is never recorded, so a transient failure does not pin itself to the key, and a claim left
+behind by a killed worker is taken over after five minutes rather than blocking the key until it expires.
+One-time secrets are stripped from anything stored for replay.
+
+### Webhooks
+
+Teams register endpoints under **Teams → Developers → Webhooks**, or at `/api/v1/webhook-endpoints`,
+and subscribe to event types or to `*` for everything including types added later. Emit one from
+anywhere:
+
+```php
+Webhooks::send($team, 'member.added', ['id' => $member->id]);
+```
+
+Signing follows [Standard Webhooks](https://www.standardwebhooks.com), so customers verify with an
+off-the-shelf library rather than hand-written HMAC — which is where verification usually goes wrong or
+gets skipped. Each delivery carries `webhook-id`, `webhook-timestamp` and `webhook-signature`, the
+signature being HMAC-SHA256 over `id.timestamp.payload`. The id and timestamp are inside the signature,
+so neither can be altered in flight and the timestamp is usable as replay protection.
+
+Endpoint URLs must be https and must resolve to a public address, and deliveries do not follow
+redirects — a webhook URL is the one destination a customer picks for our servers to call, which makes
+it an SSRF primitive otherwise. Delivery is queued and retried at 10s, 1m, 5m, 30m and 2h. Any 2xx counts as accepted. The `webhook-id`
+is stable across retries, so a receiver can recognise a redelivery — the same guarantee `Idempotency-Key`
+gives in the other direction. Every attempt is recorded in `webhook_deliveries` with the response, which
+is the only evidence either side has when deliveries quietly stop arriving. History is kept for
+`API_WEBHOOK_RETENTION_DAYS` (30) and swept daily.
 
 ## Constraints
 

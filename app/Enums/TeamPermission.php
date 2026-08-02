@@ -13,4 +13,8 @@ enum TeamPermission: string
 
     case CreateInvitation = 'invitation:create';
     case CancelInvitation = 'invitation:cancel';
+
+    case ManageApiKeys = 'api_key:manage';
+
+    case ManageWebhooks = 'webhook:manage';
 }

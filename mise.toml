@@ -82,6 +82,15 @@ description = "Run the test suite"
 depends = ["check:php", "up"]
 run = "pest --compact"
 
+[tasks."check:api"]
+description = "Regenerate the OpenAPI document and fail if it drifted from the code"
+depends = ["check:php"]
+run = """
+php artisan scramble:export --api=v1 --path=tmp/v1.json >/dev/null
+php -r 'exit(json_decode(file_get_contents("public/openapi/v1.json"), true) == json_decode(file_get_contents("tmp/v1.json"), true) ? 0 : 1);' \
+  || { echo "public/openapi/v1.json is out of date. Run: php artisan scramble:export --api=v1 --path=public/openapi/v1.json" >&2; exit 1; }
+"""
+
 [tasks."check:types"]
 description = "Typecheck the PHP code"
 depends = ["check:php"]

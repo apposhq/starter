@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Settings\ApiKeyController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
+use App\Http\Controllers\Settings\WebhookEndpointController;
 use App\Http\Controllers\Teams\TeamController;
 use App\Http\Controllers\Teams\TeamInvitationController;
 use App\Http\Controllers\Teams\TeamMemberController;
@@ -41,6 +43,29 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::patch('settings/teams/{team}/members/{user}', [TeamMemberController::class, 'update'])->name('teams.members.update');
         Route::delete('settings/teams/{team}/members/{user}', [TeamMemberController::class, 'destroy'])->name('teams.members.destroy');
+
+        // scopeBindings resolves {apiKey} and {webhook} through the {team} that precedes them in the URI,
+        // so one team asking for another's is a 404 from the router. Without it every action has to
+        // remember an ownership check by hand, and forgetting is a cross-tenant read, not a visible bug.
+        // Scoped to these routes rather than the whole group: {user} would resolve through Team::users(),
+        // and the relation is members().
+        Route::scopeBindings()->group(function () {
+            // `can:` on the group rather than a Gate call in each method: every action here needs the
+            // same ability, so stating it per-method means a method added later is authorized by
+            // omission — and that failure is silent.
+            Route::middleware('can:manageApiKeys,team')->group(function () {
+                Route::get('settings/teams/{team}/api-keys', [ApiKeyController::class, 'index'])->name('api-keys.index');
+                Route::post('settings/teams/{team}/api-keys', [ApiKeyController::class, 'store'])->name('api-keys.store');
+                Route::delete('settings/teams/{team}/api-keys/{apiKey}', [ApiKeyController::class, 'destroy'])->name('api-keys.destroy');
+            });
+
+            Route::middleware('can:manageWebhooks,team')->group(function () {
+                Route::get('settings/teams/{team}/webhooks', [WebhookEndpointController::class, 'index'])->name('webhooks.index');
+                Route::post('settings/teams/{team}/webhooks', [WebhookEndpointController::class, 'store'])->name('webhooks.store');
+                Route::patch('settings/teams/{team}/webhooks/{webhook}', [WebhookEndpointController::class, 'update'])->name('webhooks.update');
+                Route::delete('settings/teams/{team}/webhooks/{webhook}', [WebhookEndpointController::class, 'destroy'])->name('webhooks.destroy');
+            });
+        });
 
         Route::post('settings/teams/{team}/invitations', [TeamInvitationController::class, 'store'])->name('teams.invitations.store');
         Route::delete('settings/teams/{team}/invitations/{invitation}', [TeamInvitationController::class, 'destroy'])->name('teams.invitations.destroy');

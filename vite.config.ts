@@ -25,7 +25,6 @@ export default defineConfig(({ command, isSsrBuild }) => ({
     sourcemap: !isSsrBuild,
   },
   fmt: {
-    ignorePatterns: [],
     sortImports: true,
     sortPackageJson: true,
     sortTailwindcss: true,

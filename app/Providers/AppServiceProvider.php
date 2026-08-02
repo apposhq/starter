@@ -3,13 +3,20 @@
 namespace App\Providers;
 
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Models\ApiKey;
 use Carbon\CarbonImmutable;
+use Dedoc\Scramble\Scramble;
+use Dedoc\Scramble\Support\Generator\OpenApi;
+use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\DevCommands;
+use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -17,6 +24,7 @@ use Illuminate\Support\Uri;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View as ViewInstance;
 use Inertia\Inertia;
+use Laravel\Sanctum\Sanctum;
 use RuntimeException;
 use Throwable;
 
@@ -44,7 +52,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Scramble registers its routes during boot, so opting out of the default document has to happen
+        // before that. Left on, it publishes every `api/*` route as a second, differently shaped document
+        // beside the versioned one — the same endpoints described twice.
+        Scramble::ignoreDefaultRoutes();
     }
 
     /**
@@ -53,12 +64,67 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configureApiKeys();
         $this->configureDevCommands();
         $this->configureMailers();
         $this->requireProductionServices();
         $this->configureServerSideRendering();
         $this->configureSessionReplayStyles();
         $this->configureBrowserTelemetry();
+    }
+
+    /**
+     * Point Sanctum at the platform's API key model.
+     *
+     * Sanctum resolves tokens through whichever model is registered here, so the extra columns, the
+     * revocation grace period and the team ownership all apply to real requests rather than only to keys
+     * created through the UI.
+     */
+    protected function configureApiKeys(): void
+    {
+        Sanctum::usePersonalAccessTokenModel(ApiKey::class);
+
+        // One document per API version, not one for the whole app. The path is versioned, so the contract
+        // is too: `v2` becomes a second registration and a second file, and `v1` keeps describing exactly
+        // what `v1` still serves rather than drifting as new endpoints land beside it.
+        // middleware is spelled out because Scramble's default includes RestrictedDocsAccess, which
+        // aborts 403 outside local unless a viewApiDocs gate exists. These docs are the customer-facing
+        // reference — they have to be reachable in the environments customers use.
+        Scramble::registerApi('v1', ['api_path' => 'api/v1', 'middleware' => ['web']])
+            ->expose(ui: '/docs/v1', document: '/docs/v1.json')
+            ->withDocumentTransformers(function (OpenApi $document): void {
+                // Declared once here rather than annotated on every endpoint: Scramble reads routes, not
+                // middleware intent, and without this the document tells a customer nothing about how to
+                // authenticate — the first thing they need.
+                $document->secure(SecurityScheme::http('bearer')->setDescription(
+                    'A team API key, sent as `Authorization: Bearer sk_live_…`. Keys are issued per team and '
+                    .'act only on that team.'
+                ));
+            });
+
+        $this->configureApiRateLimits();
+    }
+
+    /**
+     * Meter the platform API per key rather than per address.
+     *
+     * An IP is the wrong unit for a server-to-server API: a customer behind one NAT would share a budget
+     * with strangers, and a customer on twenty workers would get twenty budgets. The key is the account,
+     * so it is what gets metered — and a key that is being abused can be revoked, which an IP cannot.
+     *
+     * Only authenticated traffic reaches here. Laravel ranks Authenticate above ThrottleRequests in its
+     * middleware priority, so a request without a usable key is answered 401 before any limiter runs —
+     * metering unauthenticated traffic would need a separate limiter ahead of the guard.
+     */
+    protected function configureApiRateLimits(): void
+    {
+        RateLimiter::for('api', function (Request $request): Limit {
+            $key = $request->attributes->get('api_key');
+
+            return $key instanceof ApiKey
+                ? Limit::perMinute(config("api.rate_limits.{$key->mode->value}"))->by("api-key:{$key->id}")
+                : Limit::none();
+        });
     }
 
     /**

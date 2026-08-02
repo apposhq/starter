@@ -47,7 +47,10 @@ return [
     |
     */
 
-    'encrypt' => env('SESSION_ENCRYPT', false),
+    // On by default: the one-time API key and webhook secret are flashed through the session on
+    // their way to the page that shows them, so an unencrypted store keeps a plaintext credential in
+    // the sessions table until garbage collection.
+    'encrypt' => env('SESSION_ENCRYPT', true),
 
     /*
     |--------------------------------------------------------------------------

@@ -91,6 +91,25 @@ class TeamPolicy
     }
 
     /**
+     * Determine whether the user can manage the team's API keys.
+     *
+     * A key grants programmatic access to everything the team owns and outlives whoever created it, so
+     * this sits with the roles that can already change the team itself.
+     */
+    public function manageApiKeys(User $user, Team $team): bool
+    {
+        return $user->hasTeamPermission($team, TeamPermission::ManageApiKeys);
+    }
+
+    /**
+     * Determine whether the user can configure where this team's events are delivered.
+     */
+    public function manageWebhooks(User $user, Team $team): bool
+    {
+        return $user->hasTeamPermission($team, TeamPermission::ManageWebhooks);
+    }
+
+    /**
      * Determine whether the user can delete the model.
      */
     public function delete(User $user, Team $team): bool
